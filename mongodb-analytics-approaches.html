@@ -1,0 +1,1257 @@
+<title>Four Paths to One Collection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@400;500;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+
+<style>
+/* ─── tokens: light ─────────────────────────────────────────────── */
+:root {
+  --ground:      #ffffff;
+  --raised:      #f9fbfa;
+  --sunken:      #f1f4f3;
+  --hairline:    #e8edeb;
+  --hairline-hi: #c1c7c6;
+  --ink:         #001e2b;
+  --ink-muted:   #5c6c75;
+  --ink-faint:   #889397;
+
+  --brand:       #00684a;   /* brand green, legible on this ground */
+  --leaf-a:      #00684a;
+  --leaf-b:      #00ed64;
+
+  /* scenario hues — line = graphics, text = accessible on ground */
+  --h-batch-line: #ffc010;  --h-batch-text: #944f01;  --h-batch-wash: #fef7db;
+  --h-trig-line:  #b45af2;  --h-trig-text:  #7c1fcb;  --h-trig-wash:  #f3e3fc;
+  --h-strm-line:  #00a35c;  --h-strm-text:  #00684a;  --h-strm-wash:  #e3fcf7;
+  --h-lake-line:  #016bf8;  --h-lake-text:  #083c90;  --h-lake-wash:  #e1f7ff;
+
+  --serif: "Newsreader", ui-serif, Georgia, serif;
+  --sans:  "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --mono:  "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+}
+
+/* ─── tokens: dark (system default, no stamp) ───────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #001e2b;
+    --raised:      #112733;
+    --sunken:      #0b2028;
+    --hairline:    #1c2d38;
+    --hairline-hi: #3d4f58;
+    --ink:         #f9fbfa;
+    --ink-muted:   #c1c7c6;
+    --ink-faint:   #889397;
+
+    --brand:       #00ed64;
+    --leaf-a:      #00a35c;
+    --leaf-b:      #71f6ba;
+    --h-batch-line: #ffc010;  --h-batch-text: #ffd664;  --h-batch-wash: #2b2410;
+    --h-trig-line:  #b45af2;  --h-trig-text:  #d6a2f5;  --h-trig-wash:  #241531;
+    --h-strm-line:  #00ed64;  --h-strm-text:  #71f6ba;  --h-strm-wash:  #05291f;
+    --h-lake-line:  #016bf8;  --h-lake-text:  #8fbcff;  --h-lake-wash:  #0b2440;
+
+  }
+}
+
+/* ─── tokens: dark (explicit stamp) ─────────────────────────────── */
+:root[data-theme="dark"] {
+  --ground:      #001e2b;
+  --raised:      #112733;
+  --sunken:      #0b2028;
+  --hairline:    #1c2d38;
+  --hairline-hi: #3d4f58;
+  --ink:         #f9fbfa;
+  --ink-muted:   #c1c7c6;
+  --ink-faint:   #889397;
+
+  --brand:       #00ed64;
+  --leaf-a:      #00a35c;
+  --leaf-b:      #71f6ba;
+  --h-batch-line: #ffc010;  --h-batch-text: #ffd664;  --h-batch-wash: #2b2410;
+  --h-trig-line:  #b45af2;  --h-trig-text:  #d6a2f5;  --h-trig-wash:  #241531;
+  --h-strm-line:  #00ed64;  --h-strm-text:  #71f6ba;  --h-strm-wash:  #05291f;
+  --h-lake-line:  #016bf8;  --h-lake-text:  #8fbcff;  --h-lake-wash:  #0b2440;
+
+}
+
+/* ─── base ──────────────────────────────────────────────────────── */
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 18px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { width: min(1140px, 100% - 3rem); margin-inline: auto; }
+
+:where(a):focus-visible, :where(button):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* ─── typography ────────────────────────────────────────────────── */
+h1, h2, h3 { font-family: var(--serif); font-weight: 500; text-wrap: balance; letter-spacing: -.012em; }
+
+h1 { font-size: clamp(2.6rem, 6.2vw, 4.4rem); line-height: 1.04; letter-spacing: -.028em; }
+h2 { font-size: clamp(1.75rem, 3.4vw, 2.4rem); line-height: 1.12; }
+h3 { font-size: 1.12rem; font-family: var(--sans); font-weight: 700; letter-spacing: -.005em; }
+
+p + p { margin-top: .85rem; }
+
+/* ─── the band: one shared column for the whole document ────────── */
+.band {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 0 3rem;
+}
+/* grid items default to min-width:auto, which lets the wide diagrams
+   blow out the track instead of scrolling inside their own container */
+.band > * { min-width: 0; }
+.band > .rail { position: sticky; top: 1.5rem; align-self: start; }
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: .72rem;
+  font-weight: 500;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.lede {
+  font-family: var(--serif);
+  font-size: clamp(1.16rem, 2.1vw, 1.4rem);
+  line-height: 1.52;
+  color: var(--ink-muted);
+}
+
+code, .mono { font-family: var(--mono); font-size: .875em; }
+
+p code, li code, td code, .spec code {
+  background: var(--sunken);
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  padding: .08em .34em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.rule { height: 1px; background: var(--hairline); border: 0; }
+
+/* ─── masthead ──────────────────────────────────────────────────── */
+.masthead {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  padding: 1.4rem 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.masthead .leaf { display: flex; align-items: center; gap: .6rem; }
+.masthead .leaf svg { display: block; }
+.leaf-a { fill: var(--leaf-a); }
+.leaf-b { fill: var(--leaf-b); }
+.masthead .leaf span { font-family: var(--mono); font-size: .74rem; letter-spacing: .13em; text-transform: uppercase; color: var(--ink-muted); }
+
+/* ─── hero ──────────────────────────────────────────────────────── */
+.hero { padding: clamp(3.4rem, 8vw, 6rem) 0 clamp(2.4rem, 5vw, 3.6rem); }
+.hero .eyebrow { display: block; margin-bottom: 1.5rem; }
+.hero h1 { margin-bottom: 1.6rem; max-width: 15ch; }
+.hero h1 em { font-style: italic; color: var(--brand); }
+
+.hero-meta {
+  display: flex; flex-wrap: wrap; gap: 0 2.4rem;
+  margin-top: 2.6rem; padding-top: 1.4rem;
+  border-top: 1px solid var(--hairline);
+  font-family: var(--mono); font-size: .76rem; letter-spacing: .05em;
+  color: var(--ink-faint);
+}
+
+/* ─── panels & diagrams ─────────────────────────────────────────── */
+.panel {
+  background: var(--raised);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+}
+.panel--flush { padding: 1.5rem .9rem; }
+.chapter .panel { background: var(--hue-wash); }
+
+.dg-scroll { overflow-x: auto; overscroll-behavior-x: contain; }
+.dg-scroll svg { display: block; width: 100%; min-width: 700px; height: auto; }
+.dg-scroll--wide svg { min-width: 880px; }
+
+.dg-caption {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .5rem 1.1rem;
+  margin-top: 1.1rem; padding-top: 1rem;
+  border-top: 1px solid var(--hairline);
+  font-family: var(--mono); font-size: .74rem; letter-spacing: .04em;
+  color: var(--ink-faint);
+}
+.dg-caption b { color: var(--ink-muted); font-weight: 500; }
+
+/* SVG primitives */
+.n-box   { fill: var(--ground); stroke: var(--hairline-hi); stroke-width: 1.5; }
+.n-box-a { fill: var(--raised); stroke: currentColor; stroke-width: 1.75; }
+.n-label { font-family: var(--mono); font-size: 13.5px; fill: var(--ink); letter-spacing: -.01em; }
+.n-sub   { font-family: var(--sans); font-size: 11.5px; fill: var(--ink-faint); letter-spacing: .04em; }
+.n-title { font-family: var(--sans); font-size: 13px; font-weight: 700; fill: var(--ink); }
+.n-tag   { font-family: var(--mono); font-size: 11.5px; fill: currentColor; letter-spacing: .02em; }
+.wire    { fill: none; stroke: var(--hairline-hi); stroke-width: 2; }
+.head    { fill: var(--hairline-hi); }
+.flow    { fill: none; stroke: currentColor; stroke-width: 2.75; stroke-linecap: round; stroke-dasharray: 5 11; }
+
+@keyframes march  { to { stroke-dashoffset: -320px; } }
+@keyframes burst  { 0%, 62% { stroke-dashoffset: 0; } 90%, 100% { stroke-dashoffset: -336px; } }
+@keyframes emit   { 0%, 68% { stroke-dashoffset: 0; } 88%, 100% { stroke-dashoffset: -176px; } }
+@keyframes sweep  { to { transform: rotate(360deg); } }
+@keyframes bar    { 0% { transform: scaleY(.12); } 66% { transform: scaleY(1); } 71%, 100% { transform: scaleY(.12); } }
+@keyframes packet { 0% { transform: translateX(0); opacity: 0; } 10% { opacity: 1; } 88% { opacity: 1; } 100% { transform: translateX(148px); opacity: 0; } }
+@keyframes ping   { 0%, 44% { opacity: 0; } 52% { opacity: .9; } 100% { opacity: 0; } }
+@keyframes glow   { 0%, 55% { opacity: 0; } 64% { opacity: 1; } 100% { opacity: 0; } }
+
+.flow--march { animation: march 7s linear infinite; }
+.flow--burst { animation: burst 5.2s cubic-bezier(.72,0,.28,1) infinite; }
+.flow--emit  { animation: emit  4.4s cubic-bezier(.72,0,.28,1) infinite; }
+
+.hand { transform-box: view-box; animation: sweep 5.2s linear infinite; }
+.wbar { transform-box: fill-box; transform-origin: 50% 100%; fill: currentColor; animation: bar 4.4s cubic-bezier(.4,0,.2,1) infinite; }
+.pkt  { fill: currentColor; animation: packet 2.9s linear infinite; }
+.pulse { fill: none; stroke: currentColor; stroke-width: 1.75; animation: glow 2.9s ease-out infinite; }
+.recv { fill: currentColor; animation: ping 4.4s ease-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .flow--march, .flow--burst, .flow--emit, .hand, .wbar, .pkt, .pulse, .recv { animation: none; }
+  .flow { stroke-dasharray: none; stroke-width: 2.25; opacity: .8; }
+  .pkt { opacity: .6; }
+  .pulse, .recv { opacity: 0; }
+  .wbar { transform: scaleY(.72); }
+}
+
+/* ─── chapters ──────────────────────────────────────────────────── */
+.chapter {
+  padding: clamp(3rem, 6vw, 4.6rem) 0;
+  border-top: 1px solid var(--hairline);
+  color: var(--hue-line);
+}
+.chapter--batch { --hue-line: var(--h-batch-line); --hue-text: var(--h-batch-text); --hue-wash: var(--h-batch-wash); }
+.chapter--trig  { --hue-line: var(--h-trig-line);  --hue-text: var(--h-trig-text);  --hue-wash: var(--h-trig-wash); }
+.chapter--strm  { --hue-line: var(--h-strm-line);  --hue-text: var(--h-strm-text);  --hue-wash: var(--h-strm-wash); }
+.chapter--lake  { --hue-line: var(--h-lake-line);  --hue-text: var(--h-lake-text);  --hue-wash: var(--h-lake-wash); }
+
+.rail .dot {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--hue-line); display: block; margin-bottom: 1.1rem;
+}
+.rail .taxon {
+  font-family: var(--mono); font-size: .72rem; font-weight: 500;
+  letter-spacing: .11em; text-transform: uppercase;
+  color: var(--hue-text); line-height: 1.8;
+}
+.rail .primitive {
+  margin-top: 1.1rem; padding-top: 1.1rem;
+  border-top: 1px solid var(--hairline);
+  font-size: .84rem; line-height: 1.45; color: var(--ink-faint);
+}
+
+.chapter main { color: var(--ink); }
+.chapter h2 { margin-bottom: .9rem; }
+.chapter .lede { margin-bottom: 2rem; }
+.chapter h3 { margin: 2.4rem 0 .7rem; }
+.chapter h3:first-of-type { margin-top: 0; }
+.chapter p + p { margin-top: .85rem; }
+
+/* spec strip */
+.spec {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px;
+  background: var(--hairline);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 2.4rem;
+}
+.spec div { background: var(--ground); padding: .9rem 1rem; }
+.spec dt {
+  font-family: var(--mono); font-size: .66rem; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ink-faint); margin-bottom: .35rem;
+}
+.spec dd { font-size: .95rem; font-weight: 500; line-height: 1.35; color: var(--ink); }
+.spec .hot { color: var(--hue-text); }
+
+/* steps */
+ol.steps { list-style: none; counter-reset: s; display: grid; gap: .85rem; }
+ol.steps li { counter-increment: s; position: relative; padding-left: 2.1rem; }
+ol.steps li::before {
+  content: counter(s);
+  position: absolute; left: 0; top: 0;
+  font-family: var(--mono); font-size: .74rem; font-weight: 700;
+  color: var(--hue-text); line-height: 2.2;
+}
+
+/* code */
+pre {
+  background: var(--sunken);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 1.1rem 1.2rem;
+  overflow-x: auto;
+  margin: 1.4rem 0 .7rem;
+  font-family: var(--mono); font-size: .795rem; line-height: 1.72;
+  color: var(--ink);
+  tab-size: 2;
+}
+pre .c { color: var(--ink-faint); font-style: italic; }
+pre .k { color: var(--hue-text); font-weight: 500; }
+pre .s { color: var(--ink-muted); }
+.snip-note { font-size: .8rem; color: var(--ink-faint); margin-bottom: 0; }
+
+/* trade-offs */
+.tradeoffs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.6rem 2.4rem; margin-top: 2.4rem; }
+.tradeoffs h4 {
+  font-family: var(--mono); font-size: .68rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  padding-bottom: .6rem; margin-bottom: .9rem;
+  border-bottom: 1px solid var(--hairline);
+}
+.tradeoffs .good h4 { color: var(--hue-text); }
+.tradeoffs .care h4 { color: var(--ink-faint); }
+.tradeoffs ul { list-style: none; display: grid; gap: .65rem; }
+.tradeoffs li { font-size: .92rem; line-height: 1.5; padding-left: 1.05rem; position: relative; color: var(--ink-muted); }
+.tradeoffs li::before {
+  content: ""; position: absolute; left: 0; top: .58em;
+  width: 5px; height: 5px; border-radius: 50%;
+}
+.tradeoffs .good li::before { background: var(--hue-line); }
+.tradeoffs .care li::before { background: var(--hairline-hi); }
+.tradeoffs li b { color: var(--ink); font-weight: 500; }
+
+/* ─── section (full-width, non-chapter) ─────────────────────────── */
+.section { padding: clamp(3rem, 6vw, 4.6rem) 0; border-top: 1px solid var(--hairline); }
+.section h2 { margin-bottom: 1.1rem; }
+.rail .eyebrow { display: block; }
+
+/* ─── comparison table ──────────────────────────────────────────── */
+.tbl-scroll { overflow-x: auto; margin-top: 2.2rem; border: 1px solid var(--hairline); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; min-width: 780px; font-size: .88rem; }
+thead th {
+  text-align: left; vertical-align: bottom;
+  font-family: var(--mono); font-size: .66rem; font-weight: 500;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint);
+  padding: 1rem .7rem; border-bottom: 1px solid var(--hairline-hi);
+  background: var(--raised);
+}
+tbody td { padding: 1rem .7rem; border-bottom: 1px solid var(--hairline); vertical-align: top; line-height: 1.45; color: var(--ink-muted); }
+tbody tr:last-child td { border-bottom: 0; }
+tbody th {
+  text-align: left; padding: 1rem .7rem; border-bottom: 1px solid var(--hairline);
+  vertical-align: top; font-weight: 500; color: var(--ink); font-size: .92rem;
+}
+tbody tr:last-child th { border-bottom: 0; }
+tbody th .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: .5rem; vertical-align: middle; }
+td .num { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); font-size: .84rem; }
+
+.d-batch { background: var(--h-batch-line); }
+.d-trig  { background: var(--h-trig-line); }
+.d-strm  { background: var(--h-strm-line); }
+.d-lake  { background: var(--h-lake-line); }
+
+/* ─── decision path ─────────────────────────────────────────────── */
+.path { display: grid; gap: 1rem; margin-top: 2.4rem; }
+.qcard {
+  background: var(--raised); border: 1px solid var(--hairline);
+  border-radius: 12px; padding: 1.4rem 1.5rem;
+}
+.qcard .step {
+  font-family: var(--mono); font-size: .66rem; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--ink-faint); display: block; margin-bottom: .5rem;
+}
+.qcard h3 { font-family: var(--serif); font-weight: 500; font-size: 1.32rem; margin-bottom: 1.1rem; }
+.branches { display: grid; gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: 9px; overflow: hidden; }
+.branch { background: var(--ground); padding: .85rem 1rem; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem 1.4rem; align-items: center; }
+.branch .cond { font-size: .92rem; color: var(--ink-muted); }
+.branch .go { font-family: var(--mono); font-size: .78rem; font-weight: 500; text-align: right; letter-spacing: -.01em; }
+.branch .go .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: .45rem; vertical-align: middle; }
+.go--batch { color: var(--h-batch-text); }
+.go--trig  { color: var(--h-trig-text); }
+.go--strm  { color: var(--h-strm-text); }
+.go--lake  { color: var(--h-lake-text); }
+.go--next  { color: var(--ink-faint); }
+
+/* ─── combos ────────────────────────────────────────────────────── */
+.combos { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.4rem; margin-top: 2.2rem; }
+.combo { border: 1px solid var(--hairline); border-radius: 12px; padding: 1.3rem 1.4rem; background: var(--raised); }
+.combo .pair { font-family: var(--mono); font-size: .72rem; letter-spacing: .06em; margin-bottom: .7rem; color: var(--ink-faint); }
+.combo .pair i { font-style: normal; }
+.combo h3 { font-size: 1rem; margin-bottom: .5rem; }
+.combo p { font-size: .9rem; color: var(--ink-muted); line-height: 1.5; }
+
+/* ─── closing ───────────────────────────────────────────────────── */
+.closing { background: var(--raised); border-top: 1px solid var(--hairline); margin-top: 3rem; padding: clamp(3rem, 6vw, 4.4rem) 0; }
+.closing h2 { margin-bottom: 1.1rem; }
+.needs { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1.6rem 2.2rem; margin-top: 2.2rem; }
+.need dt { font-family: var(--mono); font-size: .68rem; letter-spacing: .11em; text-transform: uppercase; color: var(--brand); margin-bottom: .4rem; }
+.need dd { font-size: .92rem; color: var(--ink-muted); line-height: 1.5; }
+
+footer.foot { padding: 2rem 0 3rem; font-size: .8rem; color: var(--ink-faint); }
+footer.foot p { max-width: 70ch; }
+
+/* ─── responsive ────────────────────────────────────────────────── */
+@media (max-width: 880px) {
+  .band { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .band > .rail { position: static; margin-bottom: 1.8rem; padding-bottom: 1.4rem; border-bottom: 1px solid var(--hairline); }
+  .rail .dot { margin-bottom: .8rem; }
+  .rail .primitive { margin-top: .7rem; padding-top: .7rem; }
+  .branch { grid-template-columns: 1fr; }
+  .branch .go { text-align: left; }
+}
+@media (max-width: 560px) {
+  body { font-size: 16px; }
+  .wrap { width: min(1140px, 100% - 2rem); }
+}
+</style>
+
+<div class="wrap">
+
+  <!-- ══════════ masthead ══════════ -->
+  <header class="masthead">
+    <div class="leaf">
+      <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true">
+        <path class="leaf-a" d="M12 1.5c2.9 3.4 5.6 6.4 5.6 11 0 4.1-2.5 6.6-4.7 7.6l-.5 3.4h-.8l-.5-3.4c-2.2-1-4.7-3.5-4.7-7.6 0-4.6 2.7-7.6 5.6-11z"/>
+        <path class="leaf-b" d="M12 1.5c2.9 3.4 5.6 6.4 5.6 11 0 4.1-2.5 6.6-4.7 7.6l-.5 3.4h-.4V1.5z"/>
+      </svg>
+      <span>Architecture overview</span>
+    </div>
+    <span class="eyebrow">Unified sales analytics on MongoDB</span>
+  </header>
+
+  <!-- ══════════ hero ══════════ -->
+  <section class="band hero">
+    <aside class="rail"><span class="eyebrow">The question</span></aside>
+    <main>
+    <h1>Four paths to <em>one</em> collection</h1>
+    <p class="lede">
+      Online, in-store, and partner sales each live in their own collection. Your users want a single,
+      pre-aggregated view they can query. The aggregation itself is the easy part — what really decides
+      the design is <b>when it runs</b> and <b>where the result lands</b>.
+    </p>
+
+    <div class="panel panel--flush">
+      <div class="dg-scroll">
+        <svg viewBox="0 0 880 280" role="img" aria-label="Three sales collections converge into one processing step, which writes a single pre-aggregated analytics collection.">
+          <!-- sources -->
+          <g class="src">
+            <rect class="n-box" x="24" y="37" width="158" height="46" rx="9"/>
+            <text class="n-label" x="42" y="65">sales.online</text>
+            <rect class="n-box" x="24" y="117" width="158" height="46" rx="9"/>
+            <text class="n-label" x="42" y="145">sales.instore</text>
+            <rect class="n-box" x="24" y="197" width="158" height="46" rx="9"/>
+            <text class="n-label" x="42" y="225">sales.partners</text>
+          </g>
+          <text class="n-sub" x="24" y="266">THREE WRITE PATHS, ONE BUSINESS EVENT</text>
+
+          <!-- wires -->
+          <g style="color: var(--brand)">
+            <path class="wire" d="M182,60 C282,60 282,118 364,118"/>
+            <path class="wire" d="M182,140 L364,140"/>
+            <path class="wire" d="M182,220 C282,220 282,162 364,162"/>
+            <path class="wire" d="M516,140 L690,140"/>
+            <path class="flow flow--march" d="M182,60 C282,60 282,118 364,118"/>
+            <path class="flow flow--march" style="animation-delay:-2.3s" d="M182,140 L364,140"/>
+            <path class="flow flow--march" style="animation-delay:-4.6s" d="M182,220 C282,220 282,162 364,162"/>
+            <path class="flow flow--march" style="animation-delay:-1.2s" d="M516,140 L690,140"/>
+            <polygon class="head" points="354,112.5 364,118 354,123.5"/>
+            <polygon class="head" points="354,134.5 364,140 354,145.5"/>
+            <polygon class="head" points="354,156.5 364,162 354,167.5"/>
+            <polygon class="head" points="680,134.5 690,140 680,145.5"/>
+          </g>
+
+          <!-- hub -->
+          <g style="color: var(--brand)">
+            <rect class="n-box-a" x="364" y="95" width="152" height="90" rx="11"/>
+            <text class="n-title" x="388" y="130">unify</text>
+            <text class="n-title" x="388" y="150">pre-aggregate</text>
+            <text class="n-tag" x="388" y="170">$group</text>
+          </g>
+
+          <!-- destination -->
+          <g style="color: var(--brand)">
+            <rect class="n-box-a" x="690" y="100" width="166" height="80" rx="11"/>
+            <text class="n-label" x="710" y="136">sales_rollup</text>
+            <text class="n-sub" x="710" y="157">PRE-AGGREGATED</text>
+          </g>
+        </svg>
+      </div>
+      <div class="dg-caption">
+        <span><b>The shape stays the same in all four approaches.</b></span>
+        <span>What changes: the engine in the middle, and the box on the right.</span>
+      </div>
+    </div>
+
+    <div class="hero-meta">
+      <span>4 APPROACHES</span>
+      <span>DECISION FRAMEWORK</span>
+      <span>PREPARED FOR ARCHITECTURE REVIEW</span>
+    </div>
+    </main>
+  </section>
+
+  <!-- ══════════ framing ══════════ -->
+  <section class="band section">
+    <aside class="rail"><span class="eyebrow">Before choosing</span></aside>
+    <main>
+    <h2>Two questions decide almost everything</h2>
+    <p>
+      You could skip materializing altogether and read across the three collections at query time with
+      <code>$unionWith</code>. That works, and it is a perfectly good place to start when volumes are small —
+      but every user pays the full aggregation cost on every query, and that cost grows with your history,
+      not with your traffic. Materializing the result once and serving it many times is what breaks that link.
+    </p>
+    <p>
+      Once you decide to materialize, the aggregation pipeline is broadly the same whichever path you take.
+      The four approaches below differ on two axes only:
+    </p>
+
+    <div class="path" style="margin-top:2rem">
+      <div class="qcard">
+        <span class="step">Axis one</span>
+        <h3>How stale may the numbers be?</h3>
+        <div class="branches">
+          <div class="branch"><span class="cond">Yesterday's totals are fine — the business reads them each morning.</span><span class="go go--batch"><span class="dot d-batch"></span>Scheduled batch</span></div>
+          <div class="branch"><span class="cond">Users expect today's sales to show up within minutes or seconds.</span><span class="go go--strm"><span class="dot d-strm"></span>Continuous processing</span></div>
+        </div>
+      </div>
+      <div class="qcard">
+        <span class="step">Axis two</span>
+        <h3>Where will people query the result?</h3>
+        <div class="branches">
+          <div class="branch"><span class="cond">Inside Atlas — from the app, Atlas Charts, or a BI connector.</span><span class="go go--strm"><span class="dot d-strm"></span>Write to a collection</span></div>
+          <div class="branch"><span class="cond">In a warehouse or lakehouse, joined to finance and supply-chain data.</span><span class="go go--lake"><span class="dot d-lake"></span>Write to object storage</span></div>
+        </div>
+      </div>
+    </div>
+    </main>
+  </section>
+
+  <!-- ══════════ 1. batch ══════════ -->
+  <section class="band chapter chapter--batch">
+    <aside class="rail">
+      <span class="dot" aria-hidden="true"></span>
+      <div class="taxon">Scheduled<br>Writes to Atlas</div>
+      <div class="primitive">Aggregation pipeline with <code>$merge</code>, run by a scheduled trigger or your own cron.</div>
+    </aside>
+    <main>
+      <h2>Scheduled batch refresh</h2>
+      <p class="lede">
+        The classic on-demand materialized view. One pipeline reads all three collections, aggregates, and
+        upserts the result. It runs on a clock — hourly, nightly, whatever the business can live with.
+      </p>
+
+      <dl class="spec">
+        <div><dt>Freshness</dt><dd class="hot">Minutes to a day</dd></div>
+        <div><dt>Users query</dt><dd>Atlas collection</dd></div>
+        <div><dt>Moving parts</dt><dd>None new</dd></div>
+        <div><dt>Cost shape</dt><dd>Bursty, on your cluster</dd></div>
+      </dl>
+
+      <h3>How it works</h3>
+      <ol class="steps">
+        <li>A scheduler fires — an Atlas Scheduled Trigger, Airflow, or a cron job on your side.</li>
+        <li>The pipeline reads only what changed since the last run, using a watermark such as <code>updatedAt</code>.</li>
+        <li><code>$unionWith</code> folds the other two collections in, and a shared <code>$project</code> normalizes their differing shapes into common fields.</li>
+        <li><code>$group</code> computes the rollup, and <code>$merge</code> upserts each result document into the analytics collection by key.</li>
+      </ol>
+
+      <div class="panel panel--flush">
+        <div class="dg-scroll">
+          <svg viewBox="0 0 880 280" role="img" aria-label="On a clock tick, a batch pipeline reads all three collections at once and writes the rollup collection in a single burst.">
+            <g class="src">
+              <rect class="n-box" x="24" y="37" width="158" height="46" rx="9"/>
+              <text class="n-label" x="42" y="65">sales.online</text>
+              <rect class="n-box" x="24" y="117" width="158" height="46" rx="9"/>
+              <text class="n-label" x="42" y="145">sales.instore</text>
+              <rect class="n-box" x="24" y="197" width="158" height="46" rx="9"/>
+              <text class="n-label" x="42" y="225">sales.partners</text>
+            </g>
+            <text class="n-sub" x="24" y="266">READ IN FULL, ONCE PER TICK</text>
+
+            <g style="color: var(--h-batch-line)">
+              <path class="wire" d="M182,60 C282,60 282,118 364,118"/>
+              <path class="wire" d="M182,140 L364,140"/>
+              <path class="wire" d="M182,220 C282,220 282,162 364,162"/>
+              <path class="wire" d="M516,140 L690,140"/>
+              <path class="flow flow--burst" d="M182,60 C282,60 282,118 364,118"/>
+              <path class="flow flow--burst" d="M182,140 L364,140"/>
+              <path class="flow flow--burst" d="M182,220 C282,220 282,162 364,162"/>
+              <path class="flow flow--burst" style="animation-delay:.35s" d="M516,140 L690,140"/>
+              <polygon class="head" points="354,112.5 364,118 354,123.5"/>
+              <polygon class="head" points="354,134.5 364,140 354,145.5"/>
+              <polygon class="head" points="354,156.5 364,162 354,167.5"/>
+              <polygon class="head" points="680,134.5 690,140 680,145.5"/>
+            </g>
+
+            <g style="color: var(--h-batch-line)">
+              <rect class="n-box-a" x="364" y="95" width="152" height="90" rx="11"/>
+              <circle cx="398" cy="130" r="15" fill="none" stroke="currentColor" stroke-width="1.75"/>
+              <line class="hand" x1="398" y1="130" x2="398" y2="120" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="transform-origin: 398px 130px"/>
+              <text class="n-title" x="422" y="135">nightly</text>
+              <text class="n-tag" x="388" y="167">$merge</text>
+            </g>
+
+            <g style="color: var(--h-batch-line)">
+              <rect class="n-box-a" x="690" y="100" width="166" height="80" rx="11"/>
+              <text class="n-label" x="710" y="136">sales_rollup</text>
+              <text class="n-sub" x="710" y="157">ATLAS COLLECTION</text>
+            </g>
+          </svg>
+        </div>
+        <div class="dg-caption">
+          <span><b>Nothing moves between ticks.</b></span>
+          <span>All the work — and all the load — lands in one burst.</span>
+        </div>
+      </div>
+
+      <pre><span class="c">// Atlas Scheduled Trigger, hourly</span>
+db.sales_online.aggregate([
+  { <span class="k">$match</span>:     { updatedAt: { $gte: lastRun } } },
+  { <span class="k">$unionWith</span>: { coll: <span class="s">"sales_instore"</span>,  pipeline: [ <span class="c">/* normalize */</span> ] } },
+  { <span class="k">$unionWith</span>: { coll: <span class="s">"sales_partners"</span>, pipeline: [ <span class="c">/* normalize */</span> ] } },
+  { <span class="k">$group</span>:     { _id: { day: <span class="s">"$day"</span>, region: <span class="s">"$region"</span>, channel: <span class="s">"$channel"</span> },
+                  revenue: { $sum: <span class="s">"$amount"</span> }, orders: { $sum: 1 } } },
+  { <span class="k">$merge</span>:     { into: <span class="s">"sales_rollup"</span>, on: <span class="s">"_id"</span>, whenMatched: <span class="s">"merge"</span> } }
+])</pre>
+      <p class="snip-note">Simplified for illustration — real pipelines carry more normalization and date handling.</p>
+
+      <div class="tradeoffs">
+        <div class="good">
+          <h4>Works well when</h4>
+          <ul>
+            <li><b>No new infrastructure.</b> It runs on the cluster you already operate and pay for.</li>
+            <li><b>The whole transformation is in one readable place</b> — easy to review, version, and hand to a new engineer.</li>
+            <li><b>Re-running is trivial.</b> Backfills, corrections, and schema changes are just another run over a wider window.</li>
+            <li><b>Prefer <code>$merge</code> over <code>$out</code>:</b> it updates incrementally instead of replacing the collection, so readers never see an empty view and you can watch the result with a change stream.</li>
+          </ul>
+        </div>
+        <div class="care">
+          <h4>Watch out for</h4>
+          <ul>
+            <li><b>The numbers are wrong between runs</b> — by design. Everyone querying at 3pm sees the 2am picture.</li>
+            <li><b>The burst competes with production traffic.</b> Point the read at an analytics node so the scan does not sit on top of your write path.</li>
+            <li><b>Watermark logic is subtler than it looks.</b> Late-arriving partner files and back-dated corrections slip past a naive <code>updatedAt</code> filter.</li>
+            <li><b>Deletes need a plan.</b> A pipeline that only reads current documents will never remove a rollup for data that was deleted.</li>
+          </ul>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ══════════ 2. triggers ══════════ -->
+  <section class="band chapter chapter--trig">
+    <aside class="rail">
+      <span class="dot" aria-hidden="true"></span>
+      <div class="taxon">Per-event<br>Writes to Atlas</div>
+      <div class="primitive">Atlas Database Triggers watching each source collection's change stream.</div>
+    </aside>
+    <main>
+      <h2>Per-document triggers</h2>
+      <p class="lede">
+        A trigger on each source collection fires a function for every insert, update, and delete, and that
+        function updates the matching rollup document. Reactive, granular — and the approach that looks
+        easiest at the start and ages hardest.
+      </p>
+
+      <dl class="spec">
+        <div><dt>Freshness</dt><dd class="hot">Seconds</dd></div>
+        <div><dt>Users query</dt><dd>Atlas collection</dd></div>
+        <div><dt>Moving parts</dt><dd>3 functions</dd></div>
+        <div><dt>Cost shape</dt><dd>Per invocation</dd></div>
+      </dl>
+
+      <h3>How it works</h3>
+      <ol class="steps">
+        <li>A Database Trigger is configured on each of the three collections, each watching its change stream.</li>
+        <li>Every document change invokes a function, receiving that one change event.</li>
+        <li>The function maps the document to a rollup key and applies an atomic update to the analytics collection.</li>
+      </ol>
+
+      <div class="panel panel--flush">
+        <div class="dg-scroll">
+          <svg viewBox="0 0 880 280" role="img" aria-label="Each collection change fires its own function invocation, which writes one document at a time into the rollup collection.">
+            <g class="src">
+              <rect class="n-box" x="24" y="37" width="158" height="46" rx="9"/>
+              <text class="n-label" x="42" y="65">sales.online</text>
+              <rect class="n-box" x="24" y="117" width="158" height="46" rx="9"/>
+              <text class="n-label" x="42" y="145">sales.instore</text>
+              <rect class="n-box" x="24" y="197" width="158" height="46" rx="9"/>
+              <text class="n-label" x="42" y="225">sales.partners</text>
+            </g>
+            <text class="n-sub" x="24" y="266">ONE EVENT = ONE INVOCATION</text>
+
+            <g style="color: var(--h-trig-line)">
+              <path class="wire" d="M182,60 L336,60"/>
+              <path class="wire" d="M182,140 L336,140"/>
+              <path class="wire" d="M182,220 L336,220"/>
+              <polygon class="head" points="326,54.5 336,60 326,65.5"/>
+              <polygon class="head" points="326,134.5 336,140 326,145.5"/>
+              <polygon class="head" points="326,214.5 336,220 326,225.5"/>
+              <circle class="pkt" cx="190" cy="60" r="4.5"/>
+              <circle class="pkt" cx="190" cy="140" r="4.5" style="animation-delay:-1.1s"/>
+              <circle class="pkt" cx="190" cy="220" r="4.5" style="animation-delay:-2.05s"/>
+            </g>
+
+            <!-- functions -->
+            <g style="color: var(--h-trig-line)">
+              <rect class="n-box-a" x="336" y="37" width="128" height="46" rx="9"/>
+              <text class="n-tag" x="356" y="65">trigger fn</text>
+              <rect class="pulse" x="336" y="37" width="128" height="46" rx="9"/>
+              <rect class="n-box-a" x="336" y="117" width="128" height="46" rx="9"/>
+              <text class="n-tag" x="356" y="145">trigger fn</text>
+              <rect class="pulse" x="336" y="117" width="128" height="46" rx="9" style="animation-delay:-1.1s"/>
+              <rect class="n-box-a" x="336" y="197" width="128" height="46" rx="9"/>
+              <text class="n-tag" x="356" y="225">trigger fn</text>
+              <rect class="pulse" x="336" y="197" width="128" height="46" rx="9" style="animation-delay:-2.05s"/>
+            </g>
+
+            <g style="color: var(--h-trig-line)">
+              <path class="wire" d="M464,60 C570,60 590,140 690,140"/>
+              <path class="wire" d="M464,140 L690,140"/>
+              <path class="wire" d="M464,220 C570,220 590,140 690,140"/>
+              <path class="flow flow--march" d="M464,60 C570,60 590,140 690,140"/>
+              <path class="flow flow--march" style="animation-delay:-2.4s" d="M464,140 L690,140"/>
+              <path class="flow flow--march" style="animation-delay:-4.8s" d="M464,220 C570,220 590,140 690,140"/>
+              <polygon class="head" points="680,134.5 690,140 680,145.5"/>
+            </g>
+
+            <g style="color: var(--h-trig-line)">
+              <rect class="n-box-a" x="690" y="100" width="166" height="80" rx="11"/>
+              <text class="n-label" x="710" y="136">sales_rollup</text>
+              <text class="n-sub" x="710" y="157">ATLAS COLLECTION</text>
+            </g>
+          </svg>
+        </div>
+        <div class="dg-caption">
+          <span><b>Three independent writers, no shared clock.</b></span>
+          <span>Nothing coordinates their order or groups them into a window.</span>
+        </div>
+      </div>
+
+      <pre><span class="c">// Database Trigger function — fires once per changed document</span>
+exports = async function (changeEvent) {
+  const doc = changeEvent.fullDocument;
+
+  <span class="c">// no window, no batch: the update itself must be atomic</span>
+  await rollup.updateOne(
+    { _id: { day: doc.day, region: doc.region, channel: doc.channel } },
+    { <span class="k">$inc</span>: { revenue: doc.amount, orders: 1 } },
+    { upsert: true }
+  );
+};</pre>
+      <p class="snip-note">Read–modify–write here instead of <code>$inc</code> would lose increments under concurrency.</p>
+
+      <div class="tradeoffs">
+        <div class="good">
+          <h4>Works well when</h4>
+          <ul>
+            <li><b>You are copying documents, not aggregating them</b> — projecting each sale into a unified feed is exactly what this is good at.</li>
+            <li><b>Volumes are modest</b> and the appeal of no extra infrastructure outweighs the ceilings below.</li>
+            <li><b>You need a side effect, not just a number</b> — notify, enrich, call an external service on each sale.</li>
+          </ul>
+        </div>
+        <div class="care">
+          <h4>Watch out for</h4>
+          <ul>
+            <li><b>Aggregation gets hard fast.</b> Each invocation sees one document with no window, so every rollup becomes an atomic counter update — workable for sums and counts, awkward for distinct counts, averages, or top-N.</li>
+            <li><b>Updates and deletes need the previous value</b> to adjust a running total. That means enabling pre-images and handling every operation type, not just inserts.</li>
+            <li><b>No ordering guarantee across the three collections</b>, and no natural way to reprocess a window that went wrong.</li>
+            <li><b>Cost and throughput scale with write volume,</b> not with how much analysis you actually need.</li>
+            <li><b>Backfilling history is a separate job.</b> Triggers only see changes from the moment you switch them on — so you end up writing the batch pipeline anyway.</li>
+          </ul>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ══════════ 3. ASP → Atlas ══════════ -->
+  <section class="band chapter chapter--strm">
+    <aside class="rail">
+      <span class="dot" aria-hidden="true"></span>
+      <div class="taxon">Continuous<br>Writes to Atlas</div>
+      <div class="primitive">Atlas Stream Processing with a windowed pipeline and a <code>$merge</code> sink.</div>
+    </aside>
+    <main>
+      <h2>Stream processing into a collection</h2>
+      <p class="lede">
+        One managed processor reads the three change streams continuously, unions and normalizes them,
+        aggregates inside time windows, and merges each window's result into the analytics collection.
+        A materialized view that maintains itself.
+      </p>
+
+      <dl class="spec">
+        <div><dt>Freshness</dt><dd class="hot">Seconds</dd></div>
+        <div><dt>Users query</dt><dd>Atlas collection</dd></div>
+        <div><dt>Moving parts</dt><dd>1 managed processor</dd></div>
+        <div><dt>Cost shape</dt><dd>Continuous, sized tier</dd></div>
+      </dl>
+
+      <h3>How it works</h3>
+      <ol class="steps">
+        <li><code>$source</code> opens a database-level change stream and a <code>$match</code> narrows it to the three sales collections — one stream, not three.</li>
+        <li>Ordinary aggregation stages normalize the differing shapes into common fields, in flight.</li>
+        <li><code>$tumblingWindow</code> collects events into fixed intervals and runs the <code>$group</code> inside each one — so aggregation happens over a defined set of events, not one document at a time.</li>
+        <li>When a window closes, <code>$merge</code> upserts its results into the analytics collection.</li>
+      </ol>
+
+      <div class="panel panel--flush">
+        <div class="dg-scroll">
+          <svg viewBox="0 0 880 280" role="img" aria-label="A stream processor consumes all three change streams continuously, fills a time window, and emits an aggregated result to the rollup collection each time the window closes.">
+            <g class="src">
+              <rect class="n-box" x="24" y="37" width="158" height="46" rx="9"/>
+              <text class="n-label" x="42" y="65">sales.online</text>
+              <rect class="n-box" x="24" y="117" width="158" height="46" rx="9"/>
+              <text class="n-label" x="42" y="145">sales.instore</text>
+              <rect class="n-box" x="24" y="197" width="158" height="46" rx="9"/>
+              <text class="n-label" x="42" y="225">sales.partners</text>
+            </g>
+            <text class="n-sub" x="24" y="266">CHANGE STREAMS, ALWAYS OPEN</text>
+
+            <g style="color: var(--h-strm-line)">
+              <path class="wire" d="M182,60 C282,60 282,118 364,118"/>
+              <path class="wire" d="M182,140 L364,140"/>
+              <path class="wire" d="M182,220 C282,220 282,162 364,162"/>
+              <path class="flow flow--march" d="M182,60 C282,60 282,118 364,118"/>
+              <path class="flow flow--march" style="animation-delay:-2.3s" d="M182,140 L364,140"/>
+              <path class="flow flow--march" style="animation-delay:-4.6s" d="M182,220 C282,220 282,162 364,162"/>
+              <polygon class="head" points="354,112.5 364,118 354,123.5"/>
+              <polygon class="head" points="354,134.5 364,140 354,145.5"/>
+              <polygon class="head" points="354,156.5 364,162 354,167.5"/>
+            </g>
+
+            <!-- processor with a filling window -->
+            <g style="color: var(--h-strm-line)">
+              <rect class="n-box-a" x="364" y="88" width="152" height="104" rx="11"/>
+              <text class="n-title" x="386" y="114">stream processor</text>
+              <rect class="wbar" x="386" y="130" width="14" height="42"/>
+              <rect class="wbar" x="408" y="130" width="14" height="42" style="animation-delay:-.14s"/>
+              <rect class="wbar" x="430" y="130" width="14" height="42" style="animation-delay:-.28s"/>
+              <rect class="wbar" x="452" y="130" width="14" height="42" style="animation-delay:-.42s"/>
+              <text class="n-tag" x="474" y="168">1 min</text>
+            </g>
+
+            <g style="color: var(--h-strm-line)">
+              <path class="wire" d="M516,140 L690,140"/>
+              <path class="flow flow--emit" d="M516,140 L690,140"/>
+              <polygon class="head" points="680,134.5 690,140 680,145.5"/>
+              <text class="n-sub" x="528" y="122" style="fill: var(--h-strm-text)">EMIT ON WINDOW CLOSE</text>
+            </g>
+
+            <g style="color: var(--h-strm-line)">
+              <rect class="n-box-a" x="690" y="100" width="166" height="80" rx="11"/>
+              <rect class="recv" x="690" y="100" width="166" height="80" rx="11" opacity="0"/>
+              <text class="n-label" x="710" y="136">sales_rollup</text>
+              <text class="n-sub" x="710" y="157">ATLAS COLLECTION</text>
+            </g>
+          </svg>
+        </div>
+        <div class="dg-caption">
+          <span><b>Continuous in, periodic out.</b></span>
+          <span>The window is what makes the aggregation correct — and what sets the freshness.</span>
+        </div>
+      </div>
+
+      <pre>[
+  { <span class="k">$source</span>: { connectionName: <span class="s">"salesCluster"</span>, db: <span class="s">"sales"</span>,
+              config: { fullDocumentOnly: true } } },
+
+  { <span class="k">$match</span>: { <span class="s">"ns.coll"</span>: { $in: [<span class="s">"online"</span>, <span class="s">"instore"</span>, <span class="s">"partners"</span>] } } },
+
+  { <span class="k">$tumblingWindow</span>: {
+      interval: { size: 1, unit: <span class="s">"minute"</span> },
+      pipeline: [
+        { $group: { _id: { day: <span class="s">"$day"</span>, region: <span class="s">"$region"</span>, channel: <span class="s">"$channel"</span> },
+                    revenue: { $sum: <span class="s">"$amount"</span> }, orders: { $sum: 1 } } }
+      ] } },
+
+  { <span class="k">$merge</span>: { into: { connectionName: <span class="s">"salesCluster"</span>,
+                     db: <span class="s">"analytics"</span>, coll: <span class="s">"sales_rollup"</span> } } }
+]</pre>
+      <p class="snip-note">The <code>$group</code> is the same one from the batch pipeline — only the runtime around it changed.</p>
+
+      <div class="tradeoffs">
+        <div class="good">
+          <h4>Works well when</h4>
+          <ul>
+            <li><b>You want fresh numbers without rewriting how you query.</b> The result is still a normal collection, so the app, Atlas Charts, and BI tools need no changes at all.</li>
+            <li><b>Windowing makes aggregation correct by construction</b> — no hand-rolled atomic counters, no lost updates, and averages and distinct counts are just ordinary stages.</li>
+            <li><b>It is the same aggregation language your team already writes.</b> The step up from the batch pipeline is small.</li>
+            <li><b>Analytics compute moves off the operational cluster,</b> so a heavy rollup no longer competes with checkout traffic.</li>
+            <li><b>Reliability is built in:</b> checkpointing, and a dead-letter queue for documents that fail to process instead of a silently dropped sale.</li>
+            <li><b>Backfill is supported</b> — <code>$source</code> can be configured to read existing documents before switching to live changes.</li>
+          </ul>
+        </div>
+        <div class="care">
+          <h4>Watch out for</h4>
+          <ul>
+            <li><b>It is a component you size and monitor</b>, with a cost that runs continuously — including overnight when nothing is selling.</li>
+            <li><b>Late and out-of-order events need a decision.</b> How long a closed window stays open for stragglers is a business question, not a default.</li>
+            <li><b>Window size is the freshness dial.</b> Shorter windows mean fresher numbers and more write traffic to the target collection.</li>
+            <li><b>Restating history</b> — a repricing, a corrected partner feed — is still cleanest as a one-off batch run over the affected range.</li>
+          </ul>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ══════════ 4. ASP → Iceberg ══════════ -->
+  <section class="band chapter chapter--lake">
+    <aside class="rail">
+      <span class="dot" aria-hidden="true"></span>
+      <div class="taxon">Continuous<br>Writes to S3</div>
+      <div class="primitive">Atlas Stream Processing with an <code>$iceberg</code> or <code>$emit</code> sink on AWS S3.</div>
+    </aside>
+    <main>
+      <h2>Stream processing into the lakehouse</h2>
+      <p class="lede">
+        The same processor, a different destination. Instead of a collection, the output becomes Apache
+        Iceberg tables on S3 — read by Snowflake, Databricks, Athena, or Trino. This is the one that changes
+        where your users actually run their queries.
+      </p>
+
+      <dl class="spec">
+        <div><dt>Freshness</dt><dd class="hot">Seconds to minutes</dd></div>
+        <div><dt>Users query</dt><dd>Warehouse / lakehouse</dd></div>
+        <div><dt>Moving parts</dt><dd>Processor + catalog</dd></div>
+        <div><dt>Cost shape</dt><dd>Cheap storage, engine compute</dd></div>
+      </dl>
+
+      <h3>How it works</h3>
+      <ol class="steps">
+        <li>The front of the pipeline is identical: source the change streams, normalize, optionally aggregate.</li>
+        <li><code>$iceberg</code> replaces <code>$merge</code> as the final stage, writing Iceberg v2 tables into an S3 bucket. In <code>cdc</code> mode it applies inserts, updates, and deletes as row-level changes rather than appending duplicates.</li>
+        <li>The table is registered in a catalog — AWS Glue or Hadoop — so query engines discover it automatically, and schema changes are handled as the tables evolve.</li>
+        <li>Analysts query it from whichever engine they already use. MongoDB is no longer in the read path.</li>
+      </ol>
+
+      <div class="panel panel--flush">
+        <div class="dg-scroll dg-scroll--wide">
+          <svg viewBox="0 0 1000 280" role="img" aria-label="A stream processor continuously writes Apache Iceberg tables into an S3 bucket, which downstream query engines such as Snowflake, Databricks, Athena and Trino read directly.">
+            <g class="src">
+              <rect class="n-box" x="24" y="37" width="158" height="46" rx="9"/>
+              <text class="n-label" x="42" y="65">sales.online</text>
+              <rect class="n-box" x="24" y="117" width="158" height="46" rx="9"/>
+              <text class="n-label" x="42" y="145">sales.instore</text>
+              <rect class="n-box" x="24" y="197" width="158" height="46" rx="9"/>
+              <text class="n-label" x="42" y="225">sales.partners</text>
+            </g>
+            <text class="n-sub" x="24" y="266">CHANGE STREAMS, ALWAYS OPEN</text>
+
+            <g style="color: var(--h-lake-line)">
+              <path class="wire" d="M182,60 C262,60 262,118 320,118"/>
+              <path class="wire" d="M182,140 L320,140"/>
+              <path class="wire" d="M182,220 C262,220 262,162 320,162"/>
+              <path class="flow flow--march" d="M182,60 C262,60 262,118 320,118"/>
+              <path class="flow flow--march" style="animation-delay:-2.3s" d="M182,140 L320,140"/>
+              <path class="flow flow--march" style="animation-delay:-4.6s" d="M182,220 C262,220 262,162 320,162"/>
+              <polygon class="head" points="310,112.5 320,118 310,123.5"/>
+              <polygon class="head" points="310,134.5 320,140 310,145.5"/>
+              <polygon class="head" points="310,156.5 320,162 310,167.5"/>
+            </g>
+
+            <g style="color: var(--h-lake-line)">
+              <rect class="n-box-a" x="320" y="98" width="146" height="84" rx="11"/>
+              <text class="n-title" x="342" y="128">stream processor</text>
+              <text class="n-tag" x="342" y="152" style="fill: var(--h-lake-text)">$iceberg</text>
+              <text class="n-sub" x="342" y="170" style="fill: var(--h-lake-text)">CDC MODE</text>
+            </g>
+
+            <g style="color: var(--h-lake-line)">
+              <path class="wire" d="M466,140 L560,140"/>
+              <path class="flow flow--march" style="animation-delay:-1.4s" d="M466,140 L560,140"/>
+              <polygon class="head" points="550,134.5 560,140 550,145.5"/>
+            </g>
+
+            <!-- iceberg tables on s3 -->
+            <g style="color: var(--h-lake-line)">
+              <rect class="n-box-a" x="560" y="88" width="176" height="104" rx="11"/>
+              <text class="n-title" x="582" y="116">Iceberg tables</text>
+              <text class="n-sub" x="582" y="135">AWS S3 + GLUE CATALOG</text>
+              <rect x="582" y="150" width="132" height="7" rx="3.5" fill="currentColor" opacity=".85"/>
+              <rect x="582" y="162" width="110" height="7" rx="3.5" fill="currentColor" opacity=".55"/>
+              <rect x="582" y="174" width="90"  height="7" rx="3.5" fill="currentColor" opacity=".3"/>
+            </g>
+
+            <!-- downstream engines pull from the table -->
+            <g style="color: var(--h-lake-line)">
+              <path class="wire" d="M736,140 C778,140 778,63 812,63" stroke-dasharray="4 6"/>
+              <path class="wire" d="M736,140 L812,140" stroke-dasharray="4 6"/>
+              <path class="wire" d="M736,140 C778,140 778,217 812,217" stroke-dasharray="4 6"/>
+              <polygon class="head" points="802,57.5 812,63 802,68.5"/>
+              <polygon class="head" points="802,134.5 812,140 802,145.5"/>
+              <polygon class="head" points="802,211.5 812,217 802,222.5"/>
+            </g>
+
+            <g class="src">
+              <rect class="n-box" x="812" y="44" width="176" height="38" rx="9"/>
+              <text class="n-label" x="832" y="68">Snowflake</text>
+              <rect class="n-box" x="812" y="121" width="176" height="38" rx="9"/>
+              <text class="n-label" x="832" y="145">Databricks</text>
+              <rect class="n-box" x="812" y="198" width="176" height="38" rx="9"/>
+              <text class="n-label" x="832" y="222">Athena · Trino</text>
+            </g>
+            <text class="n-sub" x="812" y="266">OUTSIDE MONGODB</text>
+          </svg>
+        </div>
+        <div class="dg-caption">
+          <span><b>MongoDB writes the tables; the engines pull from them.</b></span>
+          <span>The read path no longer touches your cluster at all.</span>
+        </div>
+      </div>
+
+      <pre>  <span class="c">// ...same $source and normalization as above...</span>
+
+  { <span class="k">$iceberg</span>: {
+      connectionName: <span class="s">"salesLake"</span>,
+      bucket:         <span class="s">"acme-analytics"</span>,
+      path:           <span class="s">"iceberg-warehouse/"</span>,
+      databaseName:   <span class="s">"sales"</span>,
+      tableName:      <span class="s">"sales_rollup"</span>,
+      mode:           <span class="s">"cdc"</span>,
+      idFieldName:    <span class="s">"_id"</span>,
+      catalog:        { type: <span class="s">"glue"</span> }
+  } }</pre>
+      <p class="snip-note">Sink stages are mutually exclusive — a processor writes to a collection or to the lake, not both.</p>
+
+      <div class="tradeoffs">
+        <div class="good">
+          <h4>Works well when</h4>
+          <ul>
+            <li><b>Sales analysis has to sit next to other enterprise data</b> — finance, inventory, marketing spend — and the joins belong in a warehouse, not in MongoDB.</li>
+            <li><b>You need years of history cheaply.</b> Object storage costs a fraction of keeping the same data on cluster disk.</li>
+            <li><b>Analysts already live in Snowflake or Databricks</b> and want the sales data to show up there, in their own tools.</li>
+            <li><b>Open format, no lock-in.</b> Iceberg is readable by every major engine, and the catalog keeps the schema honest as it evolves.</li>
+            <li><b>Full-table scans stay off the operational cluster entirely</b> — the heaviest queries never touch the database serving your customers.</li>
+          </ul>
+        </div>
+        <div class="care">
+          <h4>Watch out for</h4>
+          <ul>
+            <li><b>It changes who can consume the result.</b> An application that needs a single rollup by key in a few milliseconds still needs something in Atlas — the lake is not a serving layer.</li>
+            <li><b>You are now operating a lakehouse:</b> the bucket, the catalog, permissions, and a query engine with its own bill.</li>
+            <li><b>Visibility follows the commit cadence,</b> not the event — data appears when files are committed to the table, so tune write intervals rather than expecting instant reads.</li>
+            <li><b>Small-file pressure is real.</b> Very frequent commits create many small files, and Iceberg tables need periodic compaction to stay fast.</li>
+          </ul>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ══════════ comparison ══════════ -->
+  <section class="band section">
+    <aside class="rail"><span class="eyebrow">Side by side</span></aside>
+    <main>
+    <h2>The four approaches at a glance</h2>
+    <p>Read this along the two axes that matter: how fresh the answer is, and where the answer lives.</p>
+
+    <div class="tbl-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Approach</th>
+            <th scope="col">Freshness</th>
+            <th scope="col">How it aggregates</th>
+            <th scope="col">Where users query</th>
+            <th scope="col">Operational load</th>
+            <th scope="col">Cost shape</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row"><span class="dot d-batch"></span>Scheduled batch</th>
+            <td><span class="num">hours – 1 day</span></td>
+            <td>Full pipeline over a time window, on a clock</td>
+            <td>Atlas collection</td>
+            <td>Lowest — nothing new to run</td>
+            <td>Bursty compute on your cluster</td>
+          </tr>
+          <tr>
+            <th scope="row"><span class="dot d-trig"></span>Per-document triggers</th>
+            <td><span class="num">seconds</span></td>
+            <td>One document at a time, via atomic counters</td>
+            <td>Atlas collection</td>
+            <td>Medium — three functions, hand-written logic</td>
+            <td>Scales with write volume</td>
+          </tr>
+          <tr>
+            <th scope="row"><span class="dot d-strm"></span>Stream → collection</th>
+            <td><span class="num">seconds</span></td>
+            <td>Full pipeline inside time windows, continuously</td>
+            <td>Atlas collection</td>
+            <td>Medium — one managed processor</td>
+            <td>Continuous, by processor tier</td>
+          </tr>
+          <tr>
+            <th scope="row"><span class="dot d-lake"></span>Stream → Iceberg on S3</th>
+            <td><span class="num">seconds – minutes</span></td>
+            <td>Streaming CDC into open tables; heavy analysis in the engine</td>
+            <td>Snowflake, Databricks, Athena, Trino</td>
+            <td>Highest — processor, catalog, query engine</td>
+            <td>Cheap storage plus engine compute</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    </main>
+  </section>
+
+  <!-- ══════════ decision ══════════ -->
+  <section class="band section">
+    <aside class="rail"><span class="eyebrow">Choosing</span></aside>
+    <main>
+    <h2>A decision path, in the order the questions matter</h2>
+    <p>
+      There is no single right answer here — but there is a right order to ask the questions in. Freshness
+      first, because it eliminates the most options. Consumption second, because it determines the sink.
+    </p>
+
+    <div class="path">
+      <div class="qcard">
+        <span class="step">First ask</span>
+        <h3>Are you aggregating, or just copying documents?</h3>
+        <div class="branches">
+          <div class="branch">
+            <span class="cond">Just projecting each sale into a unified feed, one document in, one document out.</span>
+            <span class="go go--trig"><span class="dot d-trig"></span>Triggers are a fine fit</span>
+          </div>
+          <div class="branch">
+            <span class="cond">Computing sums, counts, averages, or rankings across many documents.</span>
+            <span class="go go--next">Keep going ↓</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="qcard">
+        <span class="step">Then ask</span>
+        <h3>How fresh must the numbers be?</h3>
+        <div class="branches">
+          <div class="branch">
+            <span class="cond">A daily or hourly refresh matches how the business actually reads the report.</span>
+            <span class="go go--batch"><span class="dot d-batch"></span>Scheduled batch</span>
+          </div>
+          <div class="branch">
+            <span class="cond">Store managers and partners expect to see today's sales within seconds.</span>
+            <span class="go go--next">Keep going ↓</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="qcard">
+        <span class="step">Finally</span>
+        <h3>Where will the result be consumed?</h3>
+        <div class="branches">
+          <div class="branch">
+            <span class="cond">From the application, Atlas Charts, or a BI connector — inside Atlas, low latency, by key.</span>
+            <span class="go go--strm"><span class="dot d-strm"></span>Stream → collection</span>
+          </div>
+          <div class="branch">
+            <span class="cond">In the warehouse, joined to other enterprise data, over years of history.</span>
+            <span class="go go--lake"><span class="dot d-lake"></span>Stream → Iceberg on S3</span>
+          </div>
+          <div class="branch">
+            <span class="cond">Honestly, both — an operational view and a deep analytical one.</span>
+            <span class="go go--lake"><span class="dot d-strm"></span><span class="dot d-lake"></span>Run both sinks</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    </main>
+  </section>
+
+  <!-- ══════════ combining ══════════ -->
+  <section class="band section">
+    <aside class="rail"><span class="eyebrow">In practice</span></aside>
+    <main>
+    <h2>Most production setups use two of these</h2>
+    <p>
+      These are not four competing products to pick between — they are four runtimes for broadly the same
+      pipeline, and they compose well. The common pairings:
+    </p>
+
+    <div class="combos">
+      <div class="combo">
+        <div class="pair"><i style="color:var(--h-strm-text)">STREAM</i> + <i style="color:var(--h-batch-text)">BATCH</i></div>
+        <h3>Live view, nightly truth</h3>
+        <p>
+          Stream processing keeps today's numbers current; a nightly batch recomputes the closed days from
+          source. Late partner files and corrections get absorbed without anyone hand-patching a rollup.
+        </p>
+      </div>
+      <div class="combo">
+        <div class="pair"><i style="color:var(--h-strm-text)">STREAM</i> + <i style="color:var(--h-lake-text)">LAKE</i></div>
+        <h3>Serving layer and history</h3>
+        <p>
+          One processor merges a rolling window into Atlas for the app to read by key; a second writes the
+          full event history to Iceberg for the analysts. Same source, two audiences.
+        </p>
+      </div>
+      <div class="combo">
+        <div class="pair"><i style="color:var(--ink-muted)">START HERE</i></div>
+        <h3>$unionWith first</h3>
+        <p>
+          Before building anything, run the union at query time and see whether it is fast enough. It costs
+          nothing to try, and it tells you exactly which aggregation is worth materializing.
+        </p>
+      </div>
+    </div>
+    </main>
+  </section>
+
+  <!-- ══════════ closing ══════════ -->
+</div>
+
+<div class="closing">
+  <div class="wrap band">
+    <aside class="rail"><span class="eyebrow">Next step</span></aside>
+    <main>
+    <h2>What we would need to size this properly</h2>
+    <p>
+      The choice above turns on numbers we do not have yet. Five inputs are enough to make a firm
+      recommendation and estimate what it costs to run.
+    </p>
+
+    <dl class="needs">
+      <div class="need">
+        <dt>Write volume</dt>
+        <dd>Sales per day in each of the three collections, and the peak-hour rate.</dd>
+      </div>
+      <div class="need">
+        <dt>The real questions</dt>
+        <dd>The three or four reports users actually open — those define the rollup keys.</dd>
+      </div>
+      <div class="need">
+        <dt>Freshness SLA</dt>
+        <dd>How stale a number is allowed to be before someone makes a bad decision.</dd>
+      </div>
+      <div class="need">
+        <dt>History and retention</dt>
+        <dd>How far back people query, and how much of it must stay instantly available.</dd>
+      </div>
+      <div class="need">
+        <dt>Where BI sits today</dt>
+        <dd>Whether a warehouse already exists — this alone often settles the last question.</dd>
+      </div>
+    </dl>
+
+    <footer class="foot">
+      <hr class="rule" style="margin: 2.6rem 0 1.6rem">
+      <p>
+        Prepared as an architecture overview for discussion. Pipeline snippets are simplified for
+        readability — consult the MongoDB documentation for complete stage syntax, supported tiers,
+        and current limits before implementation.
+      </p>
+    </footer>
+    </main>
+  </div>
+</div>
