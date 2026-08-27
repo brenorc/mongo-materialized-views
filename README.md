@@ -16,13 +16,41 @@ four answers to that, with the trade-offs of each.
 
 ## Contents
 
-| File | What it is |
+| Path | What it is |
 | --- | --- |
 | [`mongodb-analytics-approaches.html`](mongodb-analytics-approaches.html) | The explainer. Open it in any browser — no build step, no server. |
+| [`scripts/`](scripts/) | Working implementation of every approach, as plain `mongosh` + `bash` scripts (no npm dependencies). |
+| [`docs/`](docs/) | The step-by-step demo walkthrough, one chapter per approach. |
 
 The page is written for a customer audience: it assumes familiarity with MongoDB but
 explains each approach from scratch, with an animated diagram per approach, a
 comparison table, and a decision framework.
+
+## Running the demo
+
+Each chapter is a self-contained act of the same story, in presentation order:
+
+0. [Setup and demo data](docs/00-setup.md) — seed three differently-shaped
+   sales collections (~10k docs each) and a live-traffic writer.
+1. [Query-time aggregation](docs/01-query-time-aggregation.md) — `$unionWith`
+   at runtime: always fresh, re-reads everything, the honest baseline.
+2. [Batch materialized view](docs/02-batch-materialized-view.md) — idempotent,
+   watermark-incremental `$merge` refresh, plus a timed side-by-side proving
+   both paths agree.
+3. [Database Triggers](docs/03-database-triggers.md) — per-document `$inc`
+   upserts, provisioned programmatically via the App Services Admin API.
+4. [Stream processing](docs/04-stream-processing.md) — one ASP processor,
+   windowed `$group`, accumulating `$merge` — provisioned via the Atlas API.
+5. [Lakehouse — Iceberg on S3](docs/05-lakehouse-iceberg.md) — the `$iceberg`
+   sink, as an exact step-by-step (requires an AWS account).
+
+One line to remember while presenting: the normalization lives **once** in
+[`scripts/lib/normalize.js`](scripts/lib/normalize.js) — every approach reuses
+the same business logic; what changes is when it runs and where the result
+lands.
+
+Copy `.env.example` to `.env` to configure credentials; `.env` never leaves
+your machine.
 
 ## The four approaches
 
@@ -69,4 +97,7 @@ processor tiers, and current limits before building anything:
 
 ## Status
 
-This repository holds the explainer only. None of the four flows are implemented here.
+Approaches 1–4 are implemented and validated end-to-end against a real Atlas
+cluster (each rollup was checked for exact agreement with a recount of the raw
+collections). The lakehouse chapter is a precise step-by-step rather than an
+executed implementation, as it requires an AWS account.
