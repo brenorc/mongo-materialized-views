@@ -4,7 +4,7 @@
 # Creates (idempotently, via the Atlas Administration API):
 #   - a Stream Processing workspace "analytics-demo" (tier SP10, AWS us-east-1,
 #     same region as the cluster so change streams don't cross regions)
-#   - a Connection Registry entry "BrenoM10Conn" pointing at the cluster,
+#   - a Connection Registry entry (ASP_CONNECTION_NAME) pointing at the cluster,
 #     used both as the $source (change streams) and the $merge target
 #
 # Then prints the mongosh command to reach the workspace.
@@ -26,9 +26,9 @@ import json, os, subprocess, sys
 PUB = os.environ["MONGODB_ATLAS_PUBLIC_API_KEY"]
 PRIV = os.environ["MONGODB_ATLAS_PRIVATE_API_KEY"]
 GROUP = os.environ["MONGODB_ATLAS_PROJECT_ID"]
-CLUSTER = os.environ.get("ATLAS_CLUSTER_NAME", "BrenoM10")
+CLUSTER = os.environ.get("ATLAS_CLUSTER_NAME", "Cluster0")
 WORKSPACE = os.environ.get("ASP_WORKSPACE_NAME", "analytics-demo")
-CONNECTION = os.environ.get("ASP_CONNECTION_NAME", "BrenoM10Conn")
+CONNECTION = os.environ.get("ASP_CONNECTION_NAME", "atlasCluster")
 MODE = sys.argv[1]
 
 BASE = f"https://cloud.mongodb.com/api/atlas/v2/groups/{GROUP}/streams"

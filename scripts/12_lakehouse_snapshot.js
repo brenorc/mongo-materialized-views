@@ -17,7 +17,7 @@
 
 const ACTION = process.env.ACTION || "create";
 const NAME = "lakeSnapshotProcessor";
-const CONN = process.env.ASP_CONNECTION_NAME || "BrenoM10Conn";
+const CONN = process.env.ASP_CONNECTION_NAME || "atlasCluster";
 const DB = process.env.MONGODB_DATABASE || "mongo_analytics";
 const BUCKET = process.env.LAKE_BUCKET;
 const GLUE_DB = process.env.LAKE_GLUE_DB || "sales";
@@ -62,7 +62,6 @@ const pipeline = [
       connectionName: "salesLake",
       bucket: BUCKET,
       path: "iceberg-warehouse",   // no trailing slash — the API rejects it
-
       databaseName: GLUE_DB,
       tableName: "sales_rollup",
       mode: "cdc",

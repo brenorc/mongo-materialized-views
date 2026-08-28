@@ -34,7 +34,7 @@ BASE = "https://services.cloud.mongodb.com/api/admin/v3.0"
 PUB = os.environ["MONGODB_ATLAS_PUBLIC_API_KEY"]
 PRIV = os.environ["MONGODB_ATLAS_PRIVATE_API_KEY"]
 GROUP = os.environ["MONGODB_ATLAS_PROJECT_ID"]
-CLUSTER = os.environ.get("ATLAS_CLUSTER_NAME", "BrenoM10")
+CLUSTER = os.environ.get("ATLAS_CLUSTER_NAME", "Cluster0")
 DB = os.environ.get("MONGODB_DATABASE", "mongo_analytics")
 MODE = sys.argv[1]
 

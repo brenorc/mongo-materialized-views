@@ -61,7 +61,7 @@ Everything upstream is identical to scenario 4. Only the source and the sink
 change:
 
 ```js
-{ $source: { connectionName: "BrenoM10Conn", db: "mongo_analytics",
+{ $source: { connectionName: "atlasCluster", db: "mongo_analytics",
              coll: "sales_rollup",
              initialSync: { enable: true } } },     // replay existing rows
 // ... flatten _id, cast numerics (see gotcha 3) ...

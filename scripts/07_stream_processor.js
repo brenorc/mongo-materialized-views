@@ -22,7 +22,7 @@
 
 const ACTION = process.env.ACTION || "create";
 const NAME = "salesRollupProcessor";
-const CONN = process.env.ASP_CONNECTION_NAME || "BrenoM10Conn";
+const CONN = process.env.ASP_CONNECTION_NAME || "atlasCluster";
 const DB = process.env.MONGODB_DATABASE || "mongo_analytics";
 const SOURCES = ["sales_online", "sales_instore", "sales_partners"];
 
