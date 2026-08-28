@@ -52,6 +52,12 @@ presentation order:
    sink writing real Iceberg tables to S3 (Glue catalog), queried from Athena;
    generated once and frozen so live demos never depend on cross-cloud plumbing.
 
+Closing the discussion: the [evaluation matrix](docs/07-evaluation-matrix.md)
+scores all five on query latency, freshness, analytical flexibility, setup and
+operational simplicity, and cost at scale — 0–5 stars, with the rubric spelled
+out so the scores can be defended, and adjusted when a customer's context
+changes the assumptions.
+
 One line to remember while presenting: the normalization lives **once** in
 [`scripts/lib/normalize.js`](scripts/lib/normalize.js) — every approach reuses
 the same business logic; what changes is when it runs and where the result

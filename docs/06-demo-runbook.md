@@ -364,6 +364,21 @@ Recap on one slide (or the [explainer](../mongodb-analytics-approaches.html)):
 freshness on one axis, where-users-query on the other; the normalization was
 written once and every scenario reused it.
 
+**Then put up the [evaluation matrix](07-evaluation-matrix.md)** — five
+criteria, 0–5 stars, one row per scenario. It is the natural close: the
+audience has just seen all five run, so the scores land as a summary of what
+they watched rather than as assertions. Two things to draw out:
+
+- No row dominates another — every approach owns at least one criterion.
+  "Which is best?" genuinely has no answer without their requirements.
+- Stream processing matches or beats triggers on every criterion except raw
+  per-event freshness, and that gap is a tunable window size.
+
+Finish by weighting the criteria live, with their words: *"you told me the
+report is read each morning — so cost and simplicity dominate, and that is
+this row."* The matrix has a table for exactly that mapping, and a section on
+adjusting the scores when the customer's context changes the assumptions.
+
 **After the demo:** the SP10 workspace bills while it exists —
 `ACTION=stop` the processor, or `bash scripts/06_setup_stream_workspace.sh
 teardown` to remove the workspace.
