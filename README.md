@@ -49,7 +49,8 @@ presentation order:
 4. [Stream processing](docs/04-stream-processing.md) — one ASP processor,
    windowed `$group`, accumulating `$merge` — provisioned via the Atlas API.
 5. [Lakehouse — Iceberg on S3](docs/05-lakehouse-iceberg.md) — the `$iceberg`
-   sink, as an exact step-by-step (requires an AWS account).
+   sink writing real Iceberg tables to S3 (Glue catalog), queried from Athena;
+   generated once and frozen so live demos never depend on cross-cloud plumbing.
 
 One line to remember while presenting: the normalization lives **once** in
 [`scripts/lib/normalize.js`](scripts/lib/normalize.js) — every approach reuses
@@ -60,6 +61,10 @@ Copy `.env.example` to `.env` to configure credentials; `.env` never leaves
 your machine.
 
 ## The four approaches
+
+The explainer compares four ways to *materialize* the rollup. The runnable
+demo adds the query-time `$unionWith` baseline in front of them, which is why
+the runbook counts five scenarios.
 
 | Approach | Freshness | Users query | Trigger model |
 | --- | --- | --- | --- |
@@ -104,7 +109,8 @@ processor tiers, and current limits before building anything:
 
 ## Status
 
-Approaches 1–4 are implemented and validated end-to-end against a real Atlas
-cluster (each rollup was checked for exact agreement with a recount of the raw
-collections). The lakehouse chapter is a precise step-by-step rather than an
-executed implementation, as it requires an AWS account.
+All five approaches are implemented and validated end-to-end against a real
+Atlas cluster and a real AWS account. Every rollup was checked for exact
+agreement with a recount of the raw collections; the Iceberg table in S3
+returns the same totals from Athena as the MongoDB batch view, to the cent
+(13,828 units / 1,721,533.59 for the demo product).

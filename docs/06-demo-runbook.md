@@ -175,28 +175,50 @@ show them converge.
 - ❌ A component to size and monitor, billed while it exists; windows and
   late-event policy are decisions you must own.
 
-## Scenario 5 — Stream processing → lakehouse (4 min, narrated)
+## Scenario 5 — Stream processing → lakehouse (4 min)
 
-**Introduce:** "Last scenario changes the question 'where do users query?'.
-Same processor, but the sink becomes `$iceberg`: open Iceberg tables on S3,
-queried by Snowflake, Databricks or Athena — MongoDB leaves the read path."
+**Introduce:** "Last scenario changes a different question: not *how fresh*,
+but *where do users query?* Same processor, same pipeline — the sink becomes
+`$iceberg`, writing open Iceberg tables on S3. MongoDB leaves the read path."
 
-**Show** (docs/05-lakehouse-iceberg.md): the `$iceberg` stage next to
-scenario 4's `$merge` — everything upstream identical — and the Athena query:
+**Important:** this table is a **frozen snapshot**, generated once by Atlas
+Stream Processing and then deliberately stopped — so there is no live
+cross-cloud integration to fail on stage. Its numbers match the *reference
+state* you wrote on the whiteboard, not the live-writer totals from scenarios
+3–4. Say that out loud; it is the honest framing and it avoids the obvious
+question.
+
+**Run** (or, better, paste the SQL into the Athena console so the audience
+sees lakehouse tooling rather than a terminal):
+
+```sh
+bash scripts/13_athena_demo_query.sh
+```
 
 ```sql
-SELECT channel, SUM(units) AS units, SUM(revenue) AS revenue
+SELECT channel, SUM(units) AS units, ROUND(SUM(revenue), 2) AS revenue
 FROM sales.sales_rollup
 WHERE sku = 'SKU-001'
 GROUP BY channel ORDER BY channel;
 ```
 
-**Say:** "Same numbers landing, same pipeline — but now sales sit next to
-finance and inventory data in the warehouse, at object-storage cost. The
-trade: the lake is not a serving layer; an app that needs one row in
-milliseconds still wants scenario 2 or 4. Which is why real setups often run
-both sinks from the same source." *(This scenario needs an AWS account, so
-it is presented, not executed, in this environment.)*
+**Discuss:** the numbers are identical to the MongoDB batch view, down to the
+cent — `13828 units / 1721533.59`. Point at the byte count Athena reports.
+
+- ✅ Sales data now sits next to finance and inventory in the warehouse, at
+  object-storage cost, in an open format any engine reads; the heaviest scans
+  never touch the operational cluster.
+- ❌ The lake is **not** a serving layer — an app needing one row in
+  milliseconds still wants scenario 2 or 4; visibility follows the commit
+  cadence, not the event; and you now operate a catalog and a query engine.
+  "Which is why real setups often run both sinks from the same source."
+
+**If asked "was this really written by MongoDB?"** — yes: show
+`docs/05-lakehouse-iceberg.md`, the `$iceberg` stage, and the Glue table with
+`table_type=ICEBERG`. Optional deep cut for a technical audience: the
+type-casting gotcha, where 5,544 of 12,140 rows landed in the dead-letter
+queue because `$round` returns int for whole values and Iceberg columns are
+statically typed. It lands well with data engineers.
 
 ---
 
