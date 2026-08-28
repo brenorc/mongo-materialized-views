@@ -48,6 +48,21 @@ here would, under exactly the concurrency this approach is meant to handle.
   in sight — each invocation sees one document. That is the structural limit,
   not a tuning problem.
 
+## If your cluster auto-pauses
+
+Pausing the cluster kills the change streams the triggers depend on. Atlas
+retries, gives up, **suspends** the trigger, and emails *"A Trigger has failed
+and cannot be restarted"*. Resuming the cluster does **not** resume the
+triggers — after every unpause, run:
+
+```sh
+bash scripts/05_setup_triggers.sh resume
+```
+
+Nothing is lost: a paused cluster takes no writes, so there is no event gap to
+replay. (The same applies to a *running* stream processor in approach 4 — it
+fails on pause and needs `ACTION=start` after the cluster returns.)
+
 ## Known limits (the aging path of this approach)
 
 - **Inserts only.** This demo treats sales as append-only. Updates/deletes

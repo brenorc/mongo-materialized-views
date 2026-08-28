@@ -10,7 +10,14 @@
 # Usage, from the repo root:
 #   set -a; source .env; set +a
 #   bash scripts/05_setup_triggers.sh            # create/update everything
+#   bash scripts/05_setup_triggers.sh resume     # restart triggers suspended by a cluster pause
 #   bash scripts/05_setup_triggers.sh teardown   # delete the three triggers + function
+#
+# NOTE on paused clusters: pausing the cluster kills the change streams the
+# triggers depend on. Atlas retries, gives up, SUSPENDS the trigger and emails
+# "A Trigger has failed and cannot be restarted". Resuming the cluster does
+# NOT resume the triggers — run the `resume` action after every unpause.
+# Nothing is lost: no writes happen while the cluster is paused.
 #
 # Requires: MONGODB_ATLAS_PUBLIC_API_KEY / _PRIVATE_API_KEY with Project Owner
 # on MONGODB_ATLAS_PROJECT_ID, python3, curl. No other dependencies.
@@ -85,6 +92,22 @@ if MODE == "teardown":
         if f["name"] == FUNC_NAME:
             call("DELETE", f"{app_path}/functions/{f['_id']}", token=token)
             print(f"deleted function {FUNC_NAME}")
+    raise SystemExit(0)
+
+if MODE == "resume":
+    # Restart triggers suspended by a cluster pause. disable_token=True starts
+    # a fresh change stream — safe here because a paused cluster takes no
+    # writes, so there is no gap to replay.
+    for t in call("GET", f"{app_path}/triggers", token=token):
+        if not t["name"].startswith("onInsert_sales_"):
+            continue
+        detail = call("GET", f"{app_path}/triggers/{t['_id']}", token=token)
+        if detail.get("error"):
+            call("PUT", f"{app_path}/triggers/{t['_id']}/resume",
+                 {"disable_token": True}, token=token)
+            print(f"resumed {t['name']} (was: {detail['error'][:60]})")
+        else:
+            print(f"{t['name']} is healthy — nothing to do")
     raise SystemExit(0)
 
 # ── 4. Create or update the shared function ────────────────────────────────
