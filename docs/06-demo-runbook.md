@@ -50,6 +50,11 @@ that answer is. Total stage time: ~25–30 minutes.
    If this fails, refresh the AWS block in `.env`. Doing it now takes a
    minute; doing it in front of the customer does not.
 
+   **If you will present from the Athena console** (recommended for scenario
+   5), also open it now, switch to the `mongodb-lakehouse-demo` workgroup and
+   run the query once — so the browser is already signed in, on the right
+   region, and warmed up. Leave the tab open.
+
 5. Keep the second terminal ready with the live writer command (below) —
    **do not run it yet**.
 
@@ -208,22 +213,54 @@ avoids the obvious question from the audience.
 To regenerate it (only if the rollup data itself changed — normally never):
 see [the snapshot procedure](05-lakehouse-iceberg.md#the-demo-strategy-generate-once-freeze-replay).
 
-**Run** (or, better, paste the SQL into the Athena console so the audience
-sees lakehouse tooling rather than a terminal):
+**Run it in the Athena console** — strongly preferred for this scenario. The
+whole point is that the customer's *own* analytics tooling reads the data, so
+showing an AWS console beats showing another terminal.
+
+> **Direct link** (us-east-1):
+> https://us-east-1.console.aws.amazon.com/athena/home?region=us-east-1#/query-editor
+
+1. **Sign in to the AWS console** and confirm the region reads **N. Virginia
+   (us-east-1)** in the top-right. The table only exists in that region — a
+   wrong region gives an empty database list and a confusing start.
+2. Open **Athena → Query editor**.
+3. **Select the workgroup `mongodb-lakehouse-demo`** — the dropdown is on the
+   top right of the editor, above the tabs. This one matters: it is a
+   dedicated workgroup whose query-result location is already set to
+   `s3://<bucket>/athena-results/`. On the shared `primary` workgroup Athena
+   blocks the first query with *"No output location provided"* and asks you to
+   configure one — exactly the kind of stumble you do not want on stage.
+4. In the left panel set **Data source = `AwsDataCatalog`** and
+   **Database = `sales`**. The account has many Glue databases; `sales` is
+   alphabetically near the end of the list.
+5. Expand the `sales_rollup` table to show the columns to the audience —
+   `revenue (double)`, `units (bigint)`, `day (string)`. This is the schema
+   MongoDB registered when it wrote the table.
+6. Paste the query and press **Run** (⌘/Ctrl + Enter):
+
+   ```sql
+   SELECT channel,
+          SUM(units)              AS units,
+          ROUND(SUM(revenue), 2)  AS revenue
+   FROM sales.sales_rollup
+   WHERE sku = 'SKU-001'
+   GROUP BY channel
+   ORDER BY channel;
+   ```
+
+7. Read the result panel, and point at **"Run time"** and **"Data scanned"**
+   just below it — that is the cost model of the lakehouse, made visible.
+
+**Terminal fallback** (if the console is unavailable, or for your T-15 check):
 
 ```sh
 bash scripts/13_athena_demo_query.sh
 ```
 
-```sql
-SELECT channel, SUM(units) AS units, ROUND(SUM(revenue), 2) AS revenue
-FROM sales.sales_rollup
-WHERE sku = 'SKU-001'
-GROUP BY channel ORDER BY channel;
-```
-
 **Discuss:** the numbers are identical to the MongoDB batch view, down to the
-cent — `13828 units / 1721533.59`. Point at the byte count Athena reports.
+cent — `13828 units / 1721533.59`. Two things worth saying while the result is
+on screen: this query never touched MongoDB, and the same table is readable
+from Snowflake, Databricks or Trino without moving the data again.
 
 - ✅ Sales data now sits next to finance and inventory in the warehouse, at
   object-storage cost, in an open format any engine reads; the heaviest scans
@@ -305,9 +342,8 @@ per commit and the highest number is the current table state.)
   `sales_rollup`. Show **Table properties → `table_type = ICEBERG`** and the
   column types (`revenue: double`, `units: bigint`) — this is the schema
   MongoDB registered, and the proof that Athena is not reading loose files.
-- **Athena** → Query editor → Database `sales` → paste the SQL above.
-  Set the query result location to `s3://<bucket>/athena-results/` once, if
-  Athena asks.
+- **Athena** → Query editor — see the seven numbered steps above; remember the
+  `mongodb-lakehouse-demo` workgroup.
 
 **Optional deep cut for a technical audience:** the type-casting gotcha —
 5,544 of 12,140 rows landed in the dead-letter queue on the first run because
@@ -346,5 +382,6 @@ teardown` to remove the workspace.
 | Targets disagree at reset | Something wrote during the reset window | Just run `bash scripts/10_reset_demo.sh` again |
 | Scenario 5: `ExpiredToken` / `InvalidClientTokenId` | Temporary AWS credentials expired | Refresh the AWS block in `.env`, `set -a; source .env; set +a`. The table itself is untouched — this is only your access to it |
 | Scenario 5: `TABLE_NOT_FOUND` in Athena | Wrong database, or the Glue table was deleted | Confirm `aws glue get-table --database-name sales --name sales_rollup`; if gone, regenerate via [docs/05](05-lakehouse-iceberg.md) |
-| Scenario 5: Athena "no output location" | Athena workgroup has no result bucket set | Set it to `s3://$LAKE_BUCKET/athena-results/` in the Athena console (Settings → Manage) |
+| Scenario 5: Athena "No output location provided" | You are on the `primary` workgroup, which has none configured | Switch the workgroup dropdown to **`mongodb-lakehouse-demo`**, which has it preset. (Avoid setting it on `primary` — that workgroup is shared with other people in this account) |
+| Scenario 5: Athena database list is empty | Wrong region | Switch to **N. Virginia (us-east-1)** in the top-right region picker |
 | Scenario 5 totals differ from scenarios 3–4 | **Expected** — the lake is a frozen snapshot taken before the live writer ran | Nothing to fix; explain it, and compare against the whiteboard reference instead |

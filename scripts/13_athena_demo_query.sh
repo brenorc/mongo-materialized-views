@@ -26,11 +26,24 @@ ORDER BY channel;"
 
 echo "Sales by channel — ${SKU} (source: Iceberg on s3://${LAKE_BUCKET}, via Athena)"
 echo
-QID=$(aws athena start-query-execution \
-  --query-string "$SQL" \
-  --query-execution-context "Database=${LAKE_GLUE_DB},Catalog=AwsDataCatalog" \
-  --result-configuration "OutputLocation=s3://${LAKE_BUCKET}/athena-results/" \
-  --query QueryExecutionId --output text)
+# Use the dedicated workgroup so the CLI and the Athena console behave
+# identically. It carries the query-result location, so none is passed here.
+# ATHENA_WORKGROUP=primary falls back to an explicit result location.
+WORKGROUP="${ATHENA_WORKGROUP:-mongodb-lakehouse-demo}"
+if aws athena get-work-group --work-group "$WORKGROUP" >/dev/null 2>&1; then
+  QID=$(aws athena start-query-execution \
+    --work-group "$WORKGROUP" \
+    --query-string "$SQL" \
+    --query-execution-context "Database=${LAKE_GLUE_DB},Catalog=AwsDataCatalog" \
+    --query QueryExecutionId --output text)
+else
+  echo "(workgroup '$WORKGROUP' not found — falling back to an explicit result location)" >&2
+  QID=$(aws athena start-query-execution \
+    --query-string "$SQL" \
+    --query-execution-context "Database=${LAKE_GLUE_DB},Catalog=AwsDataCatalog" \
+    --result-configuration "OutputLocation=s3://${LAKE_BUCKET}/athena-results/" \
+    --query QueryExecutionId --output text)
+fi
 
 for _ in $(seq 1 30); do
   STATE=$(aws athena get-query-execution --query-execution-id "$QID" \

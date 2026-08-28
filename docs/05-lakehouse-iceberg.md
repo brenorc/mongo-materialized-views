@@ -29,6 +29,7 @@ changed."*
 | Glue catalog database | `sales` (table `sales_rollup`, `table_type=ICEBERG`) |
 | IAM role | `mongodb-atlas-lakehouse-demo` (trusted by the Atlas AWS account + external id) |
 | Atlas connection | `salesLake` (type `S3`) in workspace `analytics-demo` |
+| Athena workgroup | `mongodb-lakehouse-demo` (query results preset to `s3://<bucket>/athena-results/`) |
 | Snapshot result | **12,140 rows, 1,030 objects, DLQ empty** |
 
 Reproduce or rebuild it:
@@ -144,6 +145,11 @@ The snapshot is static: it costs only S3 storage (~3 MB). To remove it:
 ```sh
 aws glue delete-table --database-name sales --name sales_rollup
 aws s3 rm s3://mongo-analytics-lake-<account-id>/iceberg-warehouse --recursive
+aws athena delete-work-group --work-group mongodb-lakehouse-demo
 ```
+
+Note the Athena workgroup is a *separate* one on purpose: this AWS account is
+shared, and setting a query-result location on the default `primary` workgroup
+would change it for everyone else using the account.
 
 **Back to:** [README](../README.md) · [Demo runbook](06-demo-runbook.md)
