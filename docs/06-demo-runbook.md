@@ -221,6 +221,7 @@ teardown` to remove the workspace.
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
+| Writer prints rounds but Atlas counts stay frozen at 10k | That terminal never loaded `.env`, so `mongosh "$MONGODB_URI"` connected to **localhost** and the sales went to a local mongod | `set -a; source .env; set +a` in that terminal and restart the writer. (Scripts now refuse to run without `MONGODB_URI` — if you see rounds printing, the env is loaded.) |
 | Scenario 3 TOTAL not moving | Triggers suspended (cluster paused earlier, or reseed invalidated their change streams) | `bash scripts/05_setup_triggers.sh resume` |
 | Scenario 4 TOTAL not moving | Processor FAILED (e.g. cluster pause) or not started | `ACTION=start` via `scripts/07_stream_processor.js`; check `ACTION=stats` |
 | Scenario 4 short by a few units with writer stopped | Last window waiting for its idle timeout | Wait ~25 s and re-run the query |

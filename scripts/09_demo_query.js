@@ -12,6 +12,7 @@
 //
 // Options: SKU (default SKU-001).
 
+load("scripts/lib/guard.js");
 load("scripts/lib/normalize.js");
 
 const DB_NAME = process.env.MONGODB_DATABASE || "mongo_analytics";

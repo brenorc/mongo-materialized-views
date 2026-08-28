@@ -11,6 +11,7 @@
 //
 //   mongosh "$MONGODB_URI" --quiet --file scripts/08_backfill_rollups.js
 
+load("scripts/lib/guard.js");
 load("scripts/lib/normalize.js");
 
 const DB_NAME = process.env.MONGODB_DATABASE || "mongo_analytics";

@@ -12,6 +12,7 @@
 //
 // Same optional filters as 02: SKU, REGION, FROM, TO.
 
+load("scripts/lib/guard.js");
 load("scripts/lib/normalize.js");
 
 const DB_NAME = process.env.MONGODB_DATABASE || "mongo_analytics";

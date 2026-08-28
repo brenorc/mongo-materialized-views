@@ -7,6 +7,7 @@
 // Re-running drops and reseeds the three source collections. The rollup
 // collections are left alone — each approach's script owns its own output.
 
+load("scripts/lib/guard.js");
 load("scripts/lib/catalog.js");
 
 const DB_NAME = process.env.MONGODB_DATABASE || "mongo_analytics";

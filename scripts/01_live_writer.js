@@ -13,6 +13,7 @@
 // Each round inserts 1–3 documents into each collection, timestamped "now",
 // so every approach sees the same incoming traffic.
 
+load("scripts/lib/guard.js");
 load("scripts/lib/catalog.js");
 
 const DB_NAME = process.env.MONGODB_DATABASE || "mongo_analytics";

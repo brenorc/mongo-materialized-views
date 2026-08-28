@@ -14,6 +14,7 @@
 //   FROM=2026-08-01     inclusive day lower bound
 //   TO=2026-08-27       inclusive day upper bound
 
+load("scripts/lib/guard.js");
 load("scripts/lib/normalize.js");
 
 const DB_NAME = process.env.MONGODB_DATABASE || "mongo_analytics";

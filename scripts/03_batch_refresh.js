@@ -22,6 +22,7 @@
 // In production you would run this from an Atlas Scheduled Trigger or any
 // cron — the script is a single aggregate() call per source window.
 
+load("scripts/lib/guard.js");
 load("scripts/lib/normalize.js");
 
 const DB_NAME = process.env.MONGODB_DATABASE || "mongo_analytics";
