@@ -194,9 +194,13 @@ if (ACTION === "create") {
   sp[NAME].start();
   print(`started ${NAME}`);
 } else if (ACTION === "drop") {
-  try { sp[NAME].stop(); } catch (e) { /* was not running */ }
-  sp[NAME].drop();
-  print(`dropped ${NAME}`);
+  if (exists()) {
+    try { sp[NAME].stop(); } catch (e) { /* was not running */ }
+    sp[NAME].drop();
+    print(`dropped ${NAME}`);
+  } else {
+    print(`${NAME} does not exist — nothing to drop`);
+  }
 } else {
   print(`unknown ACTION '${ACTION}' — use create | stats | stop | start | drop`);
 }

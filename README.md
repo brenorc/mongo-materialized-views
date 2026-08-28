@@ -28,7 +28,14 @@ comparison table, and a decision framework.
 
 ## Running the demo
 
-Each chapter is a self-contained act of the same story, in presentation order:
+**Presenting to a customer?** Start from the
+[demo runbook](docs/06-demo-runbook.md): a full presenter's script — one
+reset command (`scripts/10_reset_demo.sh`) puts all scenarios at a verified
+consistent starting point, and the same business question is asked of every
+approach via `scripts/09_demo_query.js`.
+
+Each chapter below is a self-contained act of the same story, in
+presentation order:
 
 0. [Setup and demo data](docs/00-setup.md) — seed three differently-shaped
    sales collections (~10k docs each) and a live-traffic writer.

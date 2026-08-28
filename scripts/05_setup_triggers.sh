@@ -11,6 +11,8 @@
 #   set -a; source .env; set +a
 #   bash scripts/05_setup_triggers.sh            # create/update everything
 #   bash scripts/05_setup_triggers.sh resume     # restart triggers suspended by a cluster pause
+#   bash scripts/05_setup_triggers.sh disable    # pause the three triggers (used by the demo reset)
+#   bash scripts/05_setup_triggers.sh enable     # re-enable them
 #   bash scripts/05_setup_triggers.sh teardown   # delete the three triggers + function
 #
 # NOTE on paused clusters: pausing the cluster kills the change streams the
@@ -92,6 +94,21 @@ if MODE == "teardown":
         if f["name"] == FUNC_NAME:
             call("DELETE", f"{app_path}/functions/{f['_id']}", token=token)
             print(f"deleted function {FUNC_NAME}")
+    raise SystemExit(0)
+
+if MODE in ("disable", "enable"):
+    # Toggle the three demo triggers. Disabling is used by the demo reset so
+    # the seed/backfill is not double-counted by live capture; enabling a
+    # disabled trigger starts a fresh change stream from "now".
+    for t in call("GET", f"{app_path}/triggers", token=token):
+        if not t["name"].startswith("onInsert_sales_"):
+            continue
+        detail = call("GET", f"{app_path}/triggers/{t['_id']}", token=token)
+        body = {"name": detail["name"], "type": detail["type"],
+                "function_id": detail["event_processors"]["FUNCTION"]["config"]["function_id"],
+                "config": detail["config"], "disabled": MODE == "disable"}
+        call("PUT", f"{app_path}/triggers/{t['_id']}", body, token=token)
+        print(f"{MODE}d {t['name']}")
     raise SystemExit(0)
 
 if MODE == "resume":
