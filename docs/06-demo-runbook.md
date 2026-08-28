@@ -37,7 +37,20 @@ that answer is. Total stage time: ~25–30 minutes.
    needs. (If the Atlas API rejects your IP, add it to the API key's access
    list, or pass `ASP_HOSTNAME=<workspace-hostname>` to skip the lookup.)
 
-4. Keep the second terminal ready with the live writer command (below) —
+4. **Check scenario 5's credentials** (main terminal). The lake table is
+   static, but AWS credentials expire — if yours are temporary (STS), they
+   are the single most likely thing to be stale since your last demo:
+
+   ```sh
+   export AWS_REGION=us-east-1
+   aws sts get-caller-identity >/dev/null && echo "AWS ok: $LAKE_BUCKET"
+   bash scripts/13_athena_demo_query.sh | tail -3      # dry-run the query
+   ```
+
+   If this fails, refresh the AWS block in `.env`. Doing it now takes a
+   minute; doing it in front of the customer does not.
+
+5. Keep the second terminal ready with the live writer command (below) —
    **do not run it yet**.
 
 ---
@@ -181,12 +194,19 @@ show them converge.
 but *where do users query?* Same processor, same pipeline — the sink becomes
 `$iceberg`, writing open Iceberg tables on S3. MongoDB leaves the read path."
 
-**Important:** this table is a **frozen snapshot**, generated once by Atlas
-Stream Processing and then deliberately stopped — so there is no live
-cross-cloud integration to fail on stage. Its numbers match the *reference
-state* you wrote on the whiteboard, not the live-writer totals from scenarios
-3–4. Say that out loud; it is the honest framing and it avoids the obvious
-question.
+**Important — this table is a frozen snapshot.** Atlas Stream Processing
+genuinely wrote it (12,140 rows, 1,030 objects, empty DLQ), and the processor
+was then **dropped on purpose**: nothing is running, nothing is billing, and
+there is no live cross-cloud integration that can fail on stage. Every demo
+replays the same files.
+
+The consequence to say out loud: its numbers match the **reference state you
+wrote on the whiteboard**, not the live-writer totals from scenarios 3–4. The
+lake was photographed before the live traffic started. Framing it yourself
+avoids the obvious question from the audience.
+
+To regenerate it (only if the rollup data itself changed — normally never):
+see [the snapshot procedure](05-lakehouse-iceberg.md#the-demo-strategy-generate-once-freeze-replay).
 
 **Run** (or, better, paste the SQL into the Athena console so the audience
 sees lakehouse tooling rather than a terminal):
@@ -213,12 +233,87 @@ cent — `13828 units / 1721533.59`. Point at the byte count Athena reports.
   cadence, not the event; and you now operate a catalog and a query engine.
   "Which is why real setups often run both sinks from the same source."
 
-**If asked "was this really written by MongoDB?"** — yes: show
-`docs/05-lakehouse-iceberg.md`, the `$iceberg` stage, and the Glue table with
-`table_type=ICEBERG`. Optional deep cut for a technical audience: the
-type-casting gotcha, where 5,544 of 12,140 rows landed in the dead-letter
-queue because `$round` returns int for whole values and Iceberg columns are
-statically typed. It lands well with data engineers.
+### Where the files are, and how to show them
+
+The best answer to *"was this really written by MongoDB?"* is to open the
+bucket and show the Parquet files. Everything lives in one bucket in
+**us-east-1**, named `mongo-analytics-lake-<aws-account-id>` — your exact
+name is already in your shell after loading `.env`:
+
+```sh
+echo "$LAKE_BUCKET"          # e.g. mongo-analytics-lake-123456789012
+```
+
+```
+s3://$LAKE_BUCKET/
+├── iceberg-warehouse/                    ← the $iceberg `path` parameter
+│   └── sales/                            ← Glue database  (databaseName)
+│       └── sales_rollup/                 ← Iceberg table  (tableName)
+│           ├── data/                     1,024 objects — the Parquet data
+│           │   ├── 0/insert_<uuid>
+│           │   ├── 1/insert_<uuid>
+│           │   └── …                     (numbered dirs: default partitioning on _id)
+│           └── metadata/                 6 objects — what makes it a *table*
+│               ├── 0000N-<uuid>.metadata.json   schema + snapshot pointers
+│               ├── <uuid>-m0.avro                manifest (which files hold which rows)
+│               └── snap-<id>-1-<uuid>.avro       manifest list for one snapshot
+└── athena-results/                       Athena's own query output (ignore)
+```
+
+**From the terminal** — the fastest proof:
+
+```sh
+# the whole table, with a size summary (1,030 objects, ~3.2 MB)
+aws s3 ls "s3://$LAKE_BUCKET/iceberg-warehouse/sales/sales_rollup/" \
+  --recursive --summarize | tail -5
+
+# the metadata that turns a pile of Parquet into an Iceberg table
+aws s3 ls "s3://$LAKE_BUCKET/iceberg-warehouse/sales/sales_rollup/metadata/"
+
+# pull the metadata down and print the schema MongoDB actually registered
+cd "$(mktemp -d)"
+aws s3 cp "s3://$LAKE_BUCKET/iceberg-warehouse/sales/sales_rollup/metadata/" . \
+  --recursive --exclude '*' --include '*.metadata.json' --only-show-errors
+python3 -c "
+import json, glob
+d = json.load(open(sorted(glob.glob('*.metadata.json'))[-1]))   # latest commit
+print('Iceberg format-version:', d['format-version'])
+for f in d['schemas'][-1]['fields']:
+    print(f\"  {f['name']}: {f['type']}\")"
+```
+
+That last one prints exactly this — a strong slide, because the typed columns
+are the difference between "files in a bucket" and "a table":
+
+```
+Iceberg format-version: 2
+  _id: string        units: long        day: string      sku: string
+  product: string    revenue: double    channel: string  updatedAt: timestamptz
+                     orderLines: long   region: string
+```
+
+(There are several numbered `.metadata.json` files — Iceberg writes a new one
+per commit and the highest number is the current table state.)
+
+**From the AWS Console** — better on a projector:
+
+- **S3** → Buckets → `mongo-analytics-lake-…` → `iceberg-warehouse/` →
+  `sales/` → `sales_rollup/` → `data/`. Note the data files are named
+  `insert_<uuid>` **without a `.parquet` extension** — that is normal for
+  Iceberg, which tracks file identity in its manifests, not in file names.
+- **AWS Glue** → Data Catalog → Databases → `sales` → Tables →
+  `sales_rollup`. Show **Table properties → `table_type = ICEBERG`** and the
+  column types (`revenue: double`, `units: bigint`) — this is the schema
+  MongoDB registered, and the proof that Athena is not reading loose files.
+- **Athena** → Query editor → Database `sales` → paste the SQL above.
+  Set the query result location to `s3://<bucket>/athena-results/` once, if
+  Athena asks.
+
+**Optional deep cut for a technical audience:** the type-casting gotcha —
+5,544 of 12,140 rows landed in the dead-letter queue on the first run because
+`$round` returns an int for whole values while the Iceberg column is a
+`double`. Full story in [docs/05](05-lakehouse-iceberg.md#three-gotchas-we-hit-for-real).
+It lands well with data engineers.
 
 ---
 
@@ -249,3 +344,7 @@ teardown` to remove the workspace.
 | Scenario 4 short by a few units with writer stopped | Last window waiting for its idle timeout | Wait ~25 s and re-run the query |
 | Atlas API returns `IP_ADDRESS_NOT_ON_ACCESS_LIST` | Your IP changed | Add it to the API key's access list; `ASP_HOSTNAME=<host>` keeps the reset working meanwhile |
 | Targets disagree at reset | Something wrote during the reset window | Just run `bash scripts/10_reset_demo.sh` again |
+| Scenario 5: `ExpiredToken` / `InvalidClientTokenId` | Temporary AWS credentials expired | Refresh the AWS block in `.env`, `set -a; source .env; set +a`. The table itself is untouched — this is only your access to it |
+| Scenario 5: `TABLE_NOT_FOUND` in Athena | Wrong database, or the Glue table was deleted | Confirm `aws glue get-table --database-name sales --name sales_rollup`; if gone, regenerate via [docs/05](05-lakehouse-iceberg.md) |
+| Scenario 5: Athena "no output location" | Athena workgroup has no result bucket set | Set it to `s3://$LAKE_BUCKET/athena-results/` in the Athena console (Settings → Manage) |
+| Scenario 5 totals differ from scenarios 3–4 | **Expected** — the lake is a frozen snapshot taken before the live writer ran | Nothing to fix; explain it, and compare against the whiteboard reference instead |
