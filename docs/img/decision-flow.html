@@ -1,0 +1,100 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1920px; height:1080px; background:#0B1E2D; overflow:hidden; }
+  body { font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+
+  .title { position:absolute; top:50px; left:0; width:1920px; text-align:center;
+           font-family:"MongoDB Value Serif",Georgia,"Times New Roman",serif;
+           font-size:64px; color:#fff; letter-spacing:.3px; }
+  .leaf  { position:absolute; top:40px; right:74px; }
+
+  .node { position:absolute; border-radius:12px; display:flex; flex-direction:column;
+          justify-content:center; }
+
+  .q { left:220px; width:700px; height:104px; background:#16323F; padding:0 32px; }
+  .q p  { color:#E8F1F5; font-size:23px; line-height:1.34; font-weight:500; }
+  .q em { font-style:normal; font-weight:700; color:#00ED64; letter-spacing:.4px; }
+
+  .r { left:1120px; width:580px; height:104px; background:#14303E;
+       border-left:6px solid #00ED64; padding:0 28px; }
+  .r h3 { color:#00ED64; font-size:29px; font-weight:700; letter-spacing:.2px; margin-bottom:8px; }
+  .r span { color:#93AEBC; font-size:16.5px; letter-spacing:.15px; }
+  .m { font-family:"SF Mono",Menlo,monospace; color:#A9C4D0; }
+
+  .tail { position:absolute; left:220px; top:906px; width:700px; height:52px;
+          border-radius:10px; border:1.5px dashed #34556A; display:flex; align-items:center;
+          padding:0 26px; color:#7E9BAB; font-size:17px; }
+
+  .note { position:absolute; left:0; top:1006px; width:1920px; text-align:center;
+          color:#7C99A8; font-size:19px; letter-spacing:.2px; }
+  .note b { color:#B7CDD8; font-weight:600; }
+
+  svg.wires { position:absolute; inset:0; }
+  .lbl { font-size:15.5px; font-weight:700; letter-spacing:1.6px; }
+</style></head><body>
+
+<div class="title">Choosing an Analytics Approach</div>
+<svg class="leaf" width="46" height="46" viewBox="0 0 24 24">
+  <path fill="#00ED64" d="M12 0.6c4.1 5.3 6.1 9.4 5.1 13.6-.75 3.3-3.1 5.6-4.6 6.6l0 3.2h-1l0-3.2c-1.5-1-3.85-3.3-4.6-6.6C5.9 10 7.9 5.9 12 .6z"/>
+</svg>
+
+<svg class="wires" width="1920" height="1080">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#00ED64"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4E6E7E"/></marker>
+  </defs>
+  <!-- branch arrows to an outcome: always green -->
+  <g stroke="#00ED64" stroke-width="2.5" marker-end="url(#a)">
+    <line x1="920" y1="242" x2="1112" y2="242"/>
+    <line x1="920" y1="386" x2="1112" y2="386"/>
+    <line x1="920" y1="530" x2="1112" y2="530"/>
+    <line x1="920" y1="674" x2="1112" y2="674"/>
+    <line x1="920" y1="818" x2="1112" y2="818"/>
+  </g>
+  <!-- keep-going arrows down the spine -->
+  <g stroke="#4E6E7E" stroke-width="2.5" marker-end="url(#b)">
+    <line x1="570" y1="294" x2="570" y2="326"/>
+    <line x1="570" y1="438" x2="570" y2="470"/>
+    <line x1="570" y1="582" x2="570" y2="614"/>
+    <line x1="570" y1="726" x2="570" y2="758"/>
+    <line x1="570" y1="870" x2="570" y2="898"/>
+  </g>
+  <g class="lbl" fill="#00ED64" text-anchor="middle">
+    <text x="1016" y="226">NO</text>
+    <text x="1016" y="370">YES</text><text x="1016" y="514">YES</text>
+    <text x="1016" y="658">YES</text><text x="1016" y="802">YES</text>
+  </g>
+  <g class="lbl" fill="#6F8D9D">
+    <text x="592" y="322">YES</text><text x="592" y="466">NO</text>
+    <text x="592" y="610">NO</text><text x="592" y="754">NO</text>
+    <text x="592" y="890">NO</text>
+  </g>
+</svg>
+
+<div class="node q" style="top:190px"><p>Are you <em>REALLY</em> taking this to production,<br>with real data volumes?</p></div>
+<div class="node r" style="top:190px"><h3>Aggregation Pipeline</h3>
+  <span><span class="m">$unionWith</span> at query time — nothing to build or operate</span></div>
+
+<div class="node q" style="top:334px"><p>Is a scheduled refresh (hourly or nightly) fresh<br>enough, without competing with the operational workload?</p></div>
+<div class="node r" style="top:334px"><h3>Materialized Views</h3>
+  <span><span class="m">$merge</span> on a schedule — computed once, served many times</span></div>
+
+<div class="node q" style="top:478px"><p>Do you need to integrate this with data from<br>outside MongoDB, across years of history?</p></div>
+<div class="node r" style="top:478px"><h3>ASP with $iceberg</h3>
+  <span>Iceberg tables on S3 — read by Athena, Snowflake or Databricks</span></div>
+
+<div class="node q" style="top:622px"><p>Do you need <em>VERY LOW</em> latency, with no<br>transformation of the data?</p></div>
+<div class="node r" style="top:622px"><h3>Atlas Triggers</h3>
+  <span>Atomic <span class="m">$inc</span> per document, per event — no window, no <span class="m">$group</span></span></div>
+
+<div class="node q" style="top:766px"><p>Do the metrics go beyond sums and counts —<br>averages, distinct counts, top-N?</p></div>
+<div class="node r" style="top:766px"><h3>Stream Processing</h3>
+  <span>Windowed <span class="m">$group</span>, continuous, seconds of lag</span></div>
+
+<div class="tail">Still Stream Processing — needing a transformation already ruled Triggers out.</div>
+
+<div class="note">Most production answers are <b>two of these</b> — Stream Processing for today's numbers, Materialized Views as the nightly reconciliation of record.</div>
+</body></html>
